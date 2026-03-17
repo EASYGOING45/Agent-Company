@@ -105,6 +105,11 @@ body::after {
   color: var(--gold); 
   text-shadow: 2px 2px 0 var(--gold-dim);
   letter-spacing: 2px;
+  cursor: pointer;
+  transition: text-shadow 0.1s;
+}
+.brand h1:hover {
+  text-shadow: 2px 2px 0 var(--gold-dim), 0 0 10px var(--gold);
 }
 .brand p { margin: 4px 0 0; color: var(--muted); font-size: 16px; }
 
@@ -115,6 +120,7 @@ body::after {
   gap: 2px;
 }
 .meta p { margin: 0; color: var(--muted); font-size: 15px; }
+.meta .time { color: var(--green); font-size: 17px; }
 
 .nav { display: flex; gap: 8px; align-items: center; }
 
@@ -126,6 +132,7 @@ body::after {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.1s;
+  user-select: none;
 }
 .navlink:hover { 
   background: var(--line); 
@@ -133,6 +140,11 @@ body::after {
   transform: translateY(-2px);
 }
 .navlink:active { transform: translateY(1px); }
+.navlink.active {
+  background: var(--gold);
+  color: var(--bg-deep);
+  border-color: var(--gold-dim);
+}
 
 /* Main Layout */
 .layout {
@@ -169,15 +181,43 @@ body::after {
   border-radius: 0;
   padding: 12px;
   transition: all 0.15s;
+  cursor: pointer;
+  position: relative;
 }
 .member-card:hover {
   border-color: var(--gold);
   background: var(--panel-soft);
+  transform: translateX(4px);
+}
+.member-card:active {
+  transform: translateX(2px);
+}
+.member-card.selected {
+  border-color: var(--gold);
+  background: var(--panel-soft);
+  box-shadow: -4px 0 0 var(--gold);
 }
 .member-card strong { 
   display: block; 
   margin-bottom: 6px;
   font-size: 17px;
+}
+
+/* Status indicator */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+.status-dot.online { background: var(--green); }
+.status-dot.working { background: var(--gold); animation-duration: 1s; }
+.status-dot.idle { background: var(--muted); animation: none; }
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .badge { 
@@ -286,6 +326,15 @@ body::after {
   box-shadow: 
     inset 0 0 30px rgba(255,216,102,0.1),
     4px 4px 0 var(--gold-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.owner-card:hover {
+  transform: scale(1.02);
+  box-shadow: 
+    inset 0 0 30px rgba(255,216,102,0.1),
+    6px 6px 0 var(--gold-dim),
+    0 0 20px rgba(255,216,102,0.2);
 }
 
 .owner-card::before {
@@ -312,6 +361,10 @@ body::after {
   font-size: 42px;
   box-shadow: 3px 3px 0 var(--gold-dim);
   animation: float 3s ease-in-out infinite;
+  transition: animation 0.3s;
+}
+.owner-card:hover .avatar {
+  animation: float 0.5s ease-in-out infinite;
 }
 
 @keyframes float {
@@ -329,6 +382,14 @@ body::after {
   font-size: 12px;
   color: var(--muted);
   margin-top: 4px;
+}
+
+.owner-card .status {
+  margin-top: 10px;
+  padding: 4px 12px;
+  background: rgba(255,216,102,0.2);
+  border: 1px solid var(--gold-dim);
+  font-size: 12px;
 }
 
 /* Office Map */
@@ -349,6 +410,11 @@ body::after {
 .office-el {
   position: absolute;
   border-radius: 0;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.office-el:hover {
+  transform: scale(1.05);
 }
 
 .desk {
@@ -475,6 +541,12 @@ body::after {
   height: 14px;
   border-radius: 0;
   animation: pulse 2s ease-in-out infinite;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.agent-dot:hover {
+  transform: scale(1.3);
+  z-index: 10;
 }
 
 .agent-dot::before {
@@ -541,6 +613,12 @@ body::after {
   margin-bottom: 8px; 
   font-size: 14px;
   position: relative;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.feed li:hover {
+  color: var(--text);
+  transform: translateX(4px);
 }
 .feed li::before {
   content: '›';
@@ -562,6 +640,17 @@ body::after {
   border-radius: 0;
   padding: 16px 20px;
   box-shadow: 0 4px 0 var(--line-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--line-dim), 0 8px 15px var(--shadow);
+  border-color: var(--gold);
+}
+.summary-card:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--line-dim);
 }
 
 .summary-card h3 { 
@@ -575,6 +664,25 @@ body::after {
   color: var(--muted); 
   line-height: 1.6; 
   font-size: 14px; 
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--panel);
+  border: 3px solid var(--gold);
+  padding: 16px 24px;
+  color: var(--gold);
+  font-size: 16px;
+  box-shadow: 4px 4px 0 var(--gold-dim);
+  transform: translateX(200%);
+  transition: transform 0.3s ease-out;
+  z-index: 10000;
+}
+.toast.show {
+  transform: translateX(0);
 }
 
 /* Responsive */
@@ -595,13 +703,13 @@ body::after {
         <p>菲比 · 公司主人</p>
       </div>
       <div class="meta">
-        <p>Tuesday · 19:57</p>
-        <p>5 位在线 · 2 位工作中 · 1 份新总结</p>
+        <p class="time" id="clock">Tuesday · 22:38</p>
+        <p id="summary">5 位在线 · 2 位工作中 · 1 份新总结</p>
       </div>
       <nav class="nav">
-        <span class="navlink">👥 MEMBERS</span>
-        <span class="navlink">📡 UPDATES</span>
-        <span class="navlink">📋 REPORTS</span>
+        <span class="navlink active" data-panel="members">👥 MEMBERS</span>
+        <span class="navlink" data-panel="updates">📡 UPDATES</span>
+        <span class="navlink" data-panel="reports">📋 REPORTS</span>
       </nav>
     </header>
 
@@ -609,34 +717,34 @@ body::after {
       <aside class="member-rail">
         <h2>▸ MEMBERS</h2>
         <div class="member-list">
-          <article class="member-card">
+          <article class="member-card selected" data-member="phoebe">
             <strong>💛 菲比</strong>
             <span class="badge owner">主人</span>
-            <span class="badge owner">工作中</span>
+            <span class="badge owner"><span class="status-dot working"></span>工作中</span>
             <p>正在安排今天的工作</p>
           </article>
-          <article class="member-card">
+          <article class="member-card" data-member="claude">
             <strong>🔷 Claude-Dev</strong>
             <span class="badge member">成员</span>
-            <span class="badge member">编码中</span>
+            <span class="badge member"><span class="status-dot working"></span>编码中</span>
             <p>首页静态原型</p>
           </article>
-          <article class="member-card">
+          <article class="member-card" data-member="gemini">
             <strong>🔶 Gemini-R</strong>
             <span class="badge member">成员</span>
-            <span class="badge member">调研中</span>
+            <span class="badge member"><span class="status-dot online"></span>调研中</span>
             <p>素材来源整理</p>
           </article>
-          <article class="member-card">
+          <article class="member-card" data-member="codex">
             <strong>🔹 Codex-B</strong>
             <span class="badge idle">成员</span>
-            <span class="badge idle">待命</span>
+            <span class="badge idle"><span class="status-dot idle"></span>待命</span>
             <p>等待下一步任务</p>
           </article>
-          <article class="member-card">
+          <article class="member-card" data-member="visitor">
             <strong>🟣 Visitor-01</strong>
             <span class="badge guest">访客</span>
-            <span class="badge guest">在线</span>
+            <span class="badge guest"><span class="status-dot online"></span>在线</span>
             <p>短暂接入中</p>
           </article>
         </div>
@@ -650,20 +758,21 @@ body::after {
           </div>
 
           <div class="owner-zone">
-            <div class="owner-card">
+            <div class="owner-card" onclick="showToast('菲比的 Agent 公司')">
               <div class="avatar">💛</div>
               <div class="name">菲比</div>
               <div class="title">COMPANY OWNER</div>
+              <div class="status">◉工作中</div>
             </div>
             <div class="office-map">
-              <div class="window"></div>
-              <div class="desk"></div>
-              <div class="monitor"></div>
-              <div class="sofa"></div>
-              <div class="plant"></div>
-              <div class="agent-dot agent-a"></div>
-              <div class="agent-dot agent-b"></div>
-              <div class="agent-dot agent-c"></div>
+              <div class="window office-el" title="窗户"></div>
+              <div class="desk office-el" title="办公桌"></div>
+              <div class="monitor office-el" title="显示器"></div>
+              <div class="sofa office-el" title="沙发"></div>
+              <div class="plant office-el" title="植物"></div>
+              <div class="agent-dot agent-a office-el" title="Claude-Dev" onclick="showToast('Claude-Dev: 正在编码')"></div>
+              <div class="agent-dot agent-b office-el" title="Gemini-R" onclick="showToast('Gemini-R: 正在调研')"></div>
+              <div class="agent-dot agent-c office-el" title="Codex-B" onclick="showToast('Codex-B: 待命中')"></div>
             </div>
           </div>
 
@@ -676,29 +785,75 @@ body::after {
       <aside class="feed">
         <h2>▸ ACTIVITY</h2>
         <ul>
-          <li>19:57 菲比切换为工作状态</li>
-          <li>19:50 部署测试完成</li>
-          <li>19:42 首页原型开发启动</li>
-          <li>19:18 确认项目定位</li>
-          <li>18:30 修复白屏问题</li>
+          <li onclick="showToast('菲比切换为工作状态')">22:38 菲比切换为工作状态</li>
+          <li onclick="showToast('部署测试完成')">22:30 部署测试完成</li>
+          <li onclick="showToast('首页原型增强')">22:20 首页原型像素风增强</li>
+          <li onclick="showToast('修复白屏问题')">18:30 修复白屏问题</li>
+          <li onclick="showToast('项目启动')">16:18 确认项目定位</li>
         </ul>
       </aside>
     </main>
 
     <section class="summary">
-      <section class="summary-card">
+      <section class="summary-card" onclick="showToast('查看今日总结')">
         <h3>▸ DAILY SUMMARY</h3>
         <p>产品定位、首页信息架构、素材策略已经收拢完成，并开始首页静态原型开发。</p>
       </section>
-      <section class="summary-card">
+      <section class="summary-card" onclick="showToast('查看最近汇报')">
         <h3>▸ RECENT REPORTS</h3>
         <p>首页第一屏正在从规划切换到静态原型阶段，已完成基础骨架搭建。</p>
       </section>
-      <section class="summary-card">
+      <section class="summary-card" onclick="showToast('查看下一步')">
         <h3>▸ NEXT STEPS</h3>
         <p>继续优化主舞台视觉表达，完善成员状态展示，并接入真实数据。</p>
       </section>
     </section>
   </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Real-time clock
+    function updateClock() {
+      const now = new Date();
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const day = days[now.getDay()];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${day} · ${hours}:${minutes}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Toast notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = '▸ ' + message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // Member card click
+    document.querySelectorAll('.member-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.member-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const name = card.querySelector('strong').textContent;
+        showToast(name + ' 被选中');
+      });
+    });
+
+    // Nav link click
+    document.querySelectorAll('.navlink').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.navlink').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        const panel = link.dataset.panel;
+        showToast('切换到 ' + panel.toUpperCase());
+      });
+    });
+  </script>
 </body>
 </html>
