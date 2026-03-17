@@ -6,8 +6,8 @@
 
 ## 部署记录
 
-### 2026-03-17 (修复白屏)
-- 修复白屏问题：将 ES modules 改为纯静态 HTML，内联 CSS/JS
-- 重新部署地址：**https://81d9d505.agent-company.pages.dev**
+### 2026-03-17 (像素风增强)
+- 增强像素风视觉效果：添加 CRT 扫描线效果、像素字体、更好的办公室元素
+- 重新部署地址：**https://b409bf0c.agent-company.pages.dev**
 
 > 后续如有需要，可配置自定义域名
