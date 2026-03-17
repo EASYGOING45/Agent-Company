@@ -3,158 +3,587 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agent-Company</title>
+  <title>Agent-Company - 菲比的 Agent 公司</title>
   <style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
 :root {
-  --bg: #1a1e2f;
-  --panel: #232843;
-  --panel-soft: #2a3152;
-  --line: #4d5a84;
-  --text: #eef2ff;
-  --muted: #b4bddc;
-  --gold: #f3d56b;
-  --blue: #88c8ff;
-  --green: #86e0b8;
-  --red: #ff9d8f;
-  --shadow: rgba(0,0,0,0.28);
+  --bg-deep: #0d1117;
+  --bg: #161b2e;
+  --bg-soft: #1e2540;
+  --panel: #232a48;
+  --panel-soft: #2d3660;
+  --line: #3d4675;
+  --line-dim: #2a3152;
+  --text: #e8ecf4;
+  --muted: #8b95b0;
+  --gold: #ffd866;
+  --gold-dim: #c9a84c;
+  --blue: #6ec4ff;
+  --blue-dim: #4a8ec9;
+  --green: #6fffb4;
+  --green-dim: #4cb987;
+  --red: #ff7b7b;
+  --purple: #c49bff;
+  --shadow: rgba(0,0,0,0.45);
 }
+
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
-  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
-  background: linear-gradient(180deg, #1f2340 0%, #16192a 100%);
+  font-family: 'VT323', 'Courier New', monospace;
+  background: var(--bg-deep);
   color: var(--text);
+  font-size: 18px;
+  line-height: 1.5;
+  background-image: 
+    radial-gradient(ellipse at 20% 20%, rgba(110,196,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(255,216,102,0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #0d1117 0%, #121825 100%);
+  min-height: 100vh;
 }
+
+.pixel-font { font-family: 'Press Start 2P', cursive; }
+
+/* Scanlines effect */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
 .app {
   min-height: 100vh;
-  padding: 18px;
+  padding: 20px;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 16px;
+  gap: 18px;
+  max-width: 1600px;
+  margin: 0 auto;
 }
-.topbar, .member-rail, .feed, .summary-card {
-  background: var(--panel);
-  border: 2px solid var(--line);
-  box-shadow: 0 10px 30px var(--shadow);
-}
+
+/* Topbar */
 .topbar {
   display: grid;
-  grid-template-columns: 1.2fr 1fr auto;
-  gap: 16px;
-  padding: 14px 18px;
-  border-radius: 14px;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  padding: 16px 24px;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg) 100%);
+  border: 3px solid var(--line);
+  border-radius: 0;
+  box-shadow: 
+    0 4px 0 var(--line-dim),
+    0 8px 20px var(--shadow);
+  position: relative;
 }
-.brand h1 { margin: 0; font-size: 28px; color: var(--gold); }
-.brand p, .meta, .navlink { margin: 0; color: var(--muted); }
-.nav { display: flex; gap: 10px; align-items: center; }
-.navlink { padding: 8px 12px; background: var(--panel-soft); border-radius: 999px; cursor: pointer; }
+
+.topbar::before {
+  content: '◆ AGENT COMPANY';
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: var(--bg-deep);
+  padding: 0 8px;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+
+.brand h1 { 
+  margin: 0; 
+  font-size: 28px; 
+  color: var(--gold); 
+  text-shadow: 2px 2px 0 var(--gold-dim);
+  letter-spacing: 2px;
+}
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: 16px; }
+
+.meta { 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+  gap: 2px;
+}
+.meta p { margin: 0; color: var(--muted); font-size: 15px; }
+
+.nav { display: flex; gap: 8px; align-items: center; }
+
+.navlink { 
+  padding: 10px 16px; 
+  background: var(--panel-soft); 
+  border: 2px solid var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.1s;
+}
+.navlink:hover { 
+  background: var(--line); 
+  color: var(--text);
+  transform: translateY(-2px);
+}
+.navlink:active { transform: translateY(1px); }
+
+/* Main Layout */
 .layout {
   display: grid;
-  grid-template-columns: 20rem minmax(0,1fr) 22rem;
-  gap: 16px;
-  min-height: 540px;
+  grid-template-columns: 240px minmax(0,1fr) 260px;
+  gap: 18px;
+  min-height: 560px;
 }
-.member-rail, .feed { border-radius: 18px; padding: 14px; }
-.member-rail h2, .feed h2 { margin: 0 0 14px; color: var(--gold); font-size: 18px; }
+
+/* Panels */
+.member-rail, .feed { 
+  background: var(--panel); 
+  border: 3px solid var(--line);
+  border-radius: 0;
+  padding: 18px;
+  box-shadow: 0 4px 0 var(--line-dim);
+}
+
+.member-rail h2, .feed h2 { 
+  margin: 0 0 16px; 
+  color: var(--gold); 
+  font-size: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px dashed var(--line);
+  letter-spacing: 1px;
+}
+
+/* Member Cards */
+.member-list { display: grid; gap: 10px; }
+
+.member-card {
+  background: var(--bg-soft);
+  border: 2px solid var(--line-dim);
+  border-radius: 0;
+  padding: 12px;
+  transition: all 0.15s;
+}
+.member-card:hover {
+  border-color: var(--gold);
+  background: var(--panel-soft);
+}
+.member-card strong { 
+  display: block; 
+  margin-bottom: 6px;
+  font-size: 17px;
+}
+
+.badge { 
+  display: inline-block; 
+  padding: 3px 8px; 
+  font-size: 11px; 
+  margin-right: 6px;
+  border: 1px solid;
+}
+.badge.owner { 
+  background: rgba(255,216,102,0.15); 
+  color: var(--gold); 
+  border-color: var(--gold-dim);
+}
+.badge.member { 
+  background: rgba(110,196,255,0.15); 
+  color: var(--blue); 
+  border-color: var(--blue-dim);
+}
+.badge.idle { 
+  background: rgba(139,149,176,0.15); 
+  color: var(--muted);
+  border-color: #5a6478;
+}
+.badge.guest { 
+  background: rgba(196,155,255,0.15); 
+  color: var(--purple);
+  border-color: #8a6fc0;
+}
+
+.member-card p { 
+  margin: 8px 0 0; 
+  color: var(--muted); 
+  font-size: 14px; 
+}
+
+/* Stage - Main Office */
 .stage {
-  background: radial-gradient(circle at top, rgba(243,213,107,0.12), transparent 35%), linear-gradient(180deg, #293252 0%, #1d2237 100%);
-  border: 2px solid var(--line);
-  border-radius: 24px;
-  box-shadow: 0 20px 40px var(--shadow);
+  background: 
+    linear-gradient(180deg, rgba(30,37,64,0.95) 0%, rgba(22,27,46,0.98) 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(61,71,117,0.1) 20px, rgba(61,71,117,0.1) 21px),
+    repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(61,71,117,0.1) 20px, rgba(61,71,117,0.1) 21px);
+  border: 3px solid var(--line);
+  border-radius: 0;
+  box-shadow: 
+    0 4px 0 var(--line-dim),
+    0 12px 40px var(--shadow),
+    inset 0 0 100px rgba(0,0,0,0.3);
   position: relative;
   overflow: hidden;
-  padding: 18px;
+  padding: 20px;
 }
+
+/* CRT screen effect */
 .stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
-  background-size: 22px 22px;
-  opacity: .25;
+  background: 
+    radial-gradient(ellipse at 50% 0%, rgba(255,216,102,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(110,196,255,0.05) 0%, transparent 40%);
+  pointer-events: none;
 }
-.stage-inner { position: relative; z-index: 1; height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
-.stage-header h2 { margin: 0; font-size: 28px; color: var(--gold); }
-.stage-header p { margin: 8px 0 0; color: var(--muted); max-width: 42rem; }
+
+.stage-inner { 
+  position: relative; 
+  z-index: 1; 
+  height: 100%; 
+  display: grid; 
+  grid-template-rows: auto 1fr auto; 
+}
+
+.stage-header h2 { 
+  margin: 0; 
+  font-size: 22px; 
+  color: var(--gold); 
+  text-shadow: 2px 2px 0 var(--gold-dim);
+}
+.stage-header p { 
+  margin: 8px 0 0; 
+  color: var(--muted); 
+  max-width: 48rem;
+  font-size: 15px;
+}
+
+/* Owner Zone */
 .owner-zone {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 22px;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
   align-items: end;
-  padding: 24px 0;
+  padding: 20px 0;
 }
+
 .owner-card {
-  height: 320px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(243,213,107,.25), rgba(136,200,255,.12));
-  border: 2px solid rgba(243,213,107,.45);
+  height: 300px;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(255,216,102,0.2) 0%, rgba(110,196,255,0.1) 100%);
+  border: 3px solid var(--gold-dim);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff7cb;
-  font-size: 22px;
-  font-weight: 700;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  position: relative;
+  box-shadow: 
+    inset 0 0 30px rgba(255,216,102,0.1),
+    4px 4px 0 var(--gold-dim);
 }
+
+.owner-card::before {
+  content: '★ OWNER';
+  position: absolute;
+  top: -10px;
+  background: var(--bg-deep);
+  padding: 2px 8px;
+  font-size: 9px;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+}
+
 .owner-card .avatar {
-  width: 80px;
-  height: 80px;
-  background: var(--gold);
-  border-radius: 50%;
-  margin-bottom: 16px;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, var(--gold) 0%, #ffb347 100%);
+  border: 3px solid var(--gold-dim);
+  border-radius: 0;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
+  font-size: 42px;
+  box-shadow: 3px 3px 0 var(--gold-dim);
+  animation: float 3s ease-in-out infinite;
 }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.owner-card .name {
+  font-size: 20px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 var(--gold-dim);
+}
+
+.owner-card .title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Office Map */
 .office-map {
-  height: 320px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, #43507e, #2a3456);
-  border: 2px solid rgba(136,200,255,.26);
+  height: 300px;
+  border-radius: 0;
+  background: 
+    linear-gradient(180deg, #2a3456 0%, #1e2540 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(61,71,117,0.2) 19px, rgba(61,71,117,0.2) 20px),
+    repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(61,71,117,0.2) 19px, rgba(61,71,117,0.2) 20px);
+  border: 3px solid var(--line);
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
 }
-.desk, .sofa, .plant, .agent-dot {
-  position: absolute; border-radius: 12px;
+
+/* Office Elements - Pixel Art Style */
+.office-el {
+  position: absolute;
+  border-radius: 0;
 }
-.desk { width: 180px; height: 90px; left: 60px; top: 70px; background: #7f5b43; }
-.sofa { width: 130px; height: 70px; right: 70px; bottom: 54px; background: #6b638f; }
-.plant { width: 44px; height: 44px; right: 38px; top: 36px; background: #4ba06b; border-radius: 50%; }
-.agent-dot { width: 18px; height: 18px; background: var(--green); box-shadow: 0 0 0 6px rgba(134,224,184,.18); }
-.agent-a { left: 110px; top: 176px; }
-.agent-b { left: 280px; top: 110px; background: var(--gold); box-shadow: 0 0 0 6px rgba(243,213,107,.18); }
-.agent-c { right: 130px; top: 170px; background: var(--blue); box-shadow: 0 0 0 6px rgba(136,200,255,.18); }
-.stage-footer { padding-top: 16px; }
-.stage-footer p { margin: 0; color: var(--muted); font-size: 14px; }
-.member-list { display: grid; gap: 12px; }
-.member-card {
-  background: var(--panel-soft);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px;
-  padding: 12px;
+
+.desk {
+  width: 160px;
+  height: 70px;
+  left: 40px;
+  top: 80px;
+  background: linear-gradient(180deg, #8b6914 0%, #6b5010 100%);
+  border: 2px solid #4a380c;
+  box-shadow: 3px 3px 0 #3a2c08;
 }
-.member-card strong { display: block; margin-bottom: 6px; }
-.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; margin-right: 8px; }
-.badge.owner { background: rgba(243,213,107,.18); color: var(--gold); }
-.badge.member { background: rgba(136,200,255,.18); color: var(--blue); }
-.badge.guest, .badge.idle { background: rgba(255,255,255,.12); color: var(--muted); }
-.member-card p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
-.feed ul { padding-left: 18px; color: var(--muted); line-height: 1.7; margin: 0; }
-.feed li { margin-bottom: 6px; }
+.desk::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 10px;
+  width: 12px;
+  height: 30px;
+  background: #5a4510;
+  box-shadow: 120px 0 0 #5a4510;
+}
+
+.monitor {
+  width: 50px;
+  height: 36px;
+  left: 55px;
+  top: 48px;
+  background: #1a1e2f;
+  border: 2px solid var(--line);
+  box-shadow: 0 0 0 3px #0d1117, 0 0 0 5px var(--line);
+}
+.monitor::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 18px;
+  width: 14px;
+  height: 6px;
+  background: var(--line);
+}
+.monitor::after {
+  content: '▣';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--green);
+  font-size: 14px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0.5; }
+}
+
+.sofa {
+  width: 100px;
+  height: 50px;
+  right: 50px;
+  bottom: 60px;
+  background: linear-gradient(180deg, #5a4a7a 0%, #4a3a6a 100%);
+  border: 2px solid #3a2a5a;
+  box-shadow: 3px 3px 0 #2a1a4a;
+}
+
+.plant {
+  width: 32px;
+  height: 32px;
+  right: 40px;
+  top: 50px;
+  background: #2a5a2a;
+  border: 2px solid #1a4a1a;
+  border-radius: 50% 50% 0 0;
+  box-shadow: 3px 3px 0 #0a3a0a;
+}
+.plant::before {
+  content: '🌿';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+}
+
+.window {
+  width: 80px;
+  height: 60px;
+  left: 50%;
+  top: 30px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #1a3050 0%, #0a2040 100%);
+  border: 3px solid #3a5070;
+  box-shadow: inset 0 0 20px rgba(110,196,255,0.2);
+}
+.window::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 10px,
+    #3a5070 10px,
+    #3a5070 12px
+  );
+}
+.window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 14px,
+    #3a5070 14px,
+    #3a5070 16px
+  );
+}
+
+/* Agent Dots */
+.agent-dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.agent-dot::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 0;
+  animation: ripple 2s ease-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes ripple {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 0.6; }
+  100% { box-shadow: 0 0 0 12px currentColor; opacity: 0; }
+}
+
+.agent-a {
+  left: 100px;
+  top: 170px;
+  background: var(--green);
+  color: var(--green);
+}
+.agent-a::after { content: 'C'; position: absolute; top: -18px; left: 2px; font-size: 10px; color: var(--green); }
+
+.agent-b {
+  left: 260px;
+  top: 110px;
+  background: var(--gold);
+  color: var(--gold);
+}
+.agent-b::after { content: 'G'; position: absolute; top: -18px; left: 2px; font-size: 10px; color: var(--gold); }
+
+.agent-c {
+  right: 100px;
+  top: 150px;
+  background: var(--blue);
+  color: var(--blue);
+}
+.agent-c::after { content: 'X'; position: absolute; top: -18px; left: 2px; font-size: 10px; color: var(--blue); }
+
+/* Stage Footer */
+.stage-footer { 
+  padding-top: 16px; 
+  border-top: 2px dashed var(--line-dim);
+}
+.stage-footer p { 
+  margin: 0; 
+  color: var(--muted); 
+  font-size: 13px; 
+}
+
+/* Feed */
+.feed ul { 
+  padding-left: 16px; 
+  color: var(--muted); 
+  line-height: 1.8; 
+  margin: 0; 
+}
+.feed li { 
+  margin-bottom: 8px; 
+  font-size: 14px;
+  position: relative;
+}
+.feed li::before {
+  content: '›';
+  position: absolute;
+  left: -12px;
+  color: var(--gold);
+}
+
+/* Summary */
 .summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 18px;
 }
-.summary-card { border-radius: 18px; padding: 14px 16px; }
-.summary-card h3 { margin: 0 0 8px; color: var(--gold); font-size: 16px; }
-.summary-card p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 14px; }
-@media (max-width: 1100px) {
+
+.summary-card { 
+  background: var(--panel); 
+  border: 3px solid var(--line);
+  border-radius: 0;
+  padding: 16px 20px;
+  box-shadow: 0 4px 0 var(--line-dim);
+}
+
+.summary-card h3 { 
+  margin: 0 0 10px; 
+  color: var(--gold); 
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.summary-card p { 
+  margin: 0; 
+  color: var(--muted); 
+  line-height: 1.6; 
+  font-size: 14px; 
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
   .layout { grid-template-columns: 1fr; }
   .owner-zone { grid-template-columns: 1fr; }
   .summary { grid-template-columns: 1fr; }
   .topbar { grid-template-columns: 1fr; }
+  .brand, .meta, .nav { justify-self: center; text-align: center; }
 }
   </style>
 </head>
@@ -162,50 +591,50 @@ body {
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <h1>Agent-Company</h1>
+        <h1>AGENT-COMPANY</h1>
         <p>菲比 · 公司主人</p>
       </div>
       <div class="meta">
-        <p>Tuesday · 17:05</p>
+        <p>Tuesday · 19:57</p>
         <p>5 位在线 · 2 位工作中 · 1 份新总结</p>
       </div>
       <nav class="nav">
-        <span class="navlink">Members</span>
-        <span class="navlink">Updates</span>
-        <span class="navlink">Reports</span>
+        <span class="navlink">👥 MEMBERS</span>
+        <span class="navlink">📡 UPDATES</span>
+        <span class="navlink">📋 REPORTS</span>
       </nav>
     </header>
 
     <main class="layout">
       <aside class="member-rail">
-        <h2>成员</h2>
+        <h2>▸ MEMBERS</h2>
         <div class="member-list">
           <article class="member-card">
-            <strong>菲比</strong>
+            <strong>💛 菲比</strong>
             <span class="badge owner">主人</span>
             <span class="badge owner">工作中</span>
             <p>正在安排今天的工作</p>
           </article>
           <article class="member-card">
-            <strong>Claude-Dev</strong>
+            <strong>🔷 Claude-Dev</strong>
             <span class="badge member">成员</span>
             <span class="badge member">编码中</span>
             <p>首页静态原型</p>
           </article>
           <article class="member-card">
-            <strong>Gemini-Research</strong>
+            <strong>🔶 Gemini-R</strong>
             <span class="badge member">成员</span>
             <span class="badge member">调研中</span>
             <p>素材来源整理</p>
           </article>
           <article class="member-card">
-            <strong>Codex-Builder</strong>
+            <strong>🔹 Codex-B</strong>
             <span class="badge idle">成员</span>
             <span class="badge idle">待命</span>
             <p>等待下一步任务</p>
           </article>
           <article class="member-card">
-            <strong>Visitor-01</strong>
+            <strong>🟣 Visitor-01</strong>
             <span class="badge guest">访客</span>
             <span class="badge guest">在线</span>
             <p>短暂接入中</p>
@@ -216,17 +645,20 @@ body {
       <section class="stage">
         <div class="stage-inner">
           <div class="stage-header">
-            <h2>菲比的 Agent 公司空间</h2>
+            <h2>▸ 菲比的 Agent 公司空间</h2>
             <p>当前案例以菲比为公司主人，用像素风 co-working 舞台表达 Agent 的存在感、工作状态和今日产出。</p>
           </div>
 
           <div class="owner-zone">
             <div class="owner-card">
               <div class="avatar">💛</div>
-              菲比<br/>Owner Case
+              <div class="name">菲比</div>
+              <div class="title">COMPANY OWNER</div>
             </div>
             <div class="office-map">
+              <div class="window"></div>
               <div class="desk"></div>
+              <div class="monitor"></div>
               <div class="sofa"></div>
               <div class="plant"></div>
               <div class="agent-dot agent-a"></div>
@@ -236,33 +668,34 @@ body {
           </div>
 
           <div class="stage-footer">
-            <p>主舞台优先表达：公司主人、办公室空间、少量活跃成员，以及公司正在运转的感觉。</p>
+            <p>▸ 主舞台优先表达：公司主人、办公室空间、少量活跃成员，以及公司正在运转的感觉。</p>
           </div>
         </div>
       </section>
 
       <aside class="feed">
-        <h2>最近动态</h2>
+        <h2>▸ ACTIVITY</h2>
         <ul>
-          <li>17:00 菲比切换为工作状态</li>
-          <li>16:50 部署测试进行中</li>
-          <li>16:42 首页原型开发启动</li>
-          <li>16:18 确认项目定位</li>
+          <li>19:57 菲比切换为工作状态</li>
+          <li>19:50 部署测试完成</li>
+          <li>19:42 首页原型开发启动</li>
+          <li>19:18 确认项目定位</li>
+          <li>18:30 修复白屏问题</li>
         </ul>
       </aside>
     </main>
 
     <section class="summary">
       <section class="summary-card">
-        <h3>今日总结</h3>
+        <h3>▸ DAILY SUMMARY</h3>
         <p>产品定位、首页信息架构、素材策略已经收拢完成，并开始首页静态原型开发。</p>
       </section>
       <section class="summary-card">
-        <h3>最近汇报</h3>
+        <h3>▸ RECENT REPORTS</h3>
         <p>首页第一屏正在从规划切换到静态原型阶段，已完成基础骨架搭建。</p>
       </section>
       <section class="summary-card">
-        <h3>下一步</h3>
+        <h3>▸ NEXT STEPS</h3>
         <p>继续优化主舞台视觉表达，完善成员状态展示，并接入真实数据。</p>
       </section>
     </section>
