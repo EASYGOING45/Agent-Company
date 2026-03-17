@@ -6,8 +6,8 @@
 
 ## 部署记录
 
-### 2026-03-17
-- 使用 wrangler 直接部署
-- 部署地址（测试版）：https://642a5a9f.agent-company.pages.dev
+### 2026-03-17 (修复白屏)
+- 修复白屏问题：将 ES modules 改为纯静态 HTML，内联 CSS/JS
+- 重新部署地址：**https://81d9d505.agent-company.pages.dev**
 
 > 后续如有需要，可配置自定义域名

@@ -1,12 +1,271 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agent-Company</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="./src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent-Company</title>
+  <style>
+:root {
+  --bg: #1a1e2f;
+  --panel: #232843;
+  --panel-soft: #2a3152;
+  --line: #4d5a84;
+  --text: #eef2ff;
+  --muted: #b4bddc;
+  --gold: #f3d56b;
+  --blue: #88c8ff;
+  --green: #86e0b8;
+  --red: #ff9d8f;
+  --shadow: rgba(0,0,0,0.28);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  background: linear-gradient(180deg, #1f2340 0%, #16192a 100%);
+  color: var(--text);
+}
+.app {
+  min-height: 100vh;
+  padding: 18px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+}
+.topbar, .member-rail, .feed, .summary-card {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+.topbar {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr auto;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
+}
+.brand h1 { margin: 0; font-size: 28px; color: var(--gold); }
+.brand p, .meta, .navlink { margin: 0; color: var(--muted); }
+.nav { display: flex; gap: 10px; align-items: center; }
+.navlink { padding: 8px 12px; background: var(--panel-soft); border-radius: 999px; cursor: pointer; }
+.layout {
+  display: grid;
+  grid-template-columns: 20rem minmax(0,1fr) 22rem;
+  gap: 16px;
+  min-height: 540px;
+}
+.member-rail, .feed { border-radius: 18px; padding: 14px; }
+.member-rail h2, .feed h2 { margin: 0 0 14px; color: var(--gold); font-size: 18px; }
+.stage {
+  background: radial-gradient(circle at top, rgba(243,213,107,0.12), transparent 35%), linear-gradient(180deg, #293252 0%, #1d2237 100%);
+  border: 2px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px var(--shadow);
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+}
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: .25;
+}
+.stage-inner { position: relative; z-index: 1; height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+.stage-header h2 { margin: 0; font-size: 28px; color: var(--gold); }
+.stage-header p { margin: 8px 0 0; color: var(--muted); max-width: 42rem; }
+.owner-zone {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 22px;
+  align-items: end;
+  padding: 24px 0;
+}
+.owner-card {
+  height: 320px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(243,213,107,.25), rgba(136,200,255,.12));
+  border: 2px solid rgba(243,213,107,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff7cb;
+  font-size: 22px;
+  font-weight: 700;
+  flex-direction: column;
+}
+.owner-card .avatar {
+  width: 80px;
+  height: 80px;
+  background: var(--gold);
+  border-radius: 50%;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+.office-map {
+  height: 320px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #43507e, #2a3456);
+  border: 2px solid rgba(136,200,255,.26);
+  position: relative;
+  overflow: hidden;
+}
+.desk, .sofa, .plant, .agent-dot {
+  position: absolute; border-radius: 12px;
+}
+.desk { width: 180px; height: 90px; left: 60px; top: 70px; background: #7f5b43; }
+.sofa { width: 130px; height: 70px; right: 70px; bottom: 54px; background: #6b638f; }
+.plant { width: 44px; height: 44px; right: 38px; top: 36px; background: #4ba06b; border-radius: 50%; }
+.agent-dot { width: 18px; height: 18px; background: var(--green); box-shadow: 0 0 0 6px rgba(134,224,184,.18); }
+.agent-a { left: 110px; top: 176px; }
+.agent-b { left: 280px; top: 110px; background: var(--gold); box-shadow: 0 0 0 6px rgba(243,213,107,.18); }
+.agent-c { right: 130px; top: 170px; background: var(--blue); box-shadow: 0 0 0 6px rgba(136,200,255,.18); }
+.stage-footer { padding-top: 16px; }
+.stage-footer p { margin: 0; color: var(--muted); font-size: 14px; }
+.member-list { display: grid; gap: 12px; }
+.member-card {
+  background: var(--panel-soft);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 12px;
+}
+.member-card strong { display: block; margin-bottom: 6px; }
+.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; margin-right: 8px; }
+.badge.owner { background: rgba(243,213,107,.18); color: var(--gold); }
+.badge.member { background: rgba(136,200,255,.18); color: var(--blue); }
+.badge.guest, .badge.idle { background: rgba(255,255,255,.12); color: var(--muted); }
+.member-card p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.feed ul { padding-left: 18px; color: var(--muted); line-height: 1.7; margin: 0; }
+.feed li { margin-bottom: 6px; }
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.summary-card { border-radius: 18px; padding: 14px 16px; }
+.summary-card h3 { margin: 0 0 8px; color: var(--gold); font-size: 16px; }
+.summary-card p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 14px; }
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+  .owner-zone { grid-template-columns: 1fr; }
+  .summary { grid-template-columns: 1fr; }
+  .topbar { grid-template-columns: 1fr; }
+}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Agent-Company</h1>
+        <p>菲比 · 公司主人</p>
+      </div>
+      <div class="meta">
+        <p>Tuesday · 17:05</p>
+        <p>5 位在线 · 2 位工作中 · 1 份新总结</p>
+      </div>
+      <nav class="nav">
+        <span class="navlink">Members</span>
+        <span class="navlink">Updates</span>
+        <span class="navlink">Reports</span>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <aside class="member-rail">
+        <h2>成员</h2>
+        <div class="member-list">
+          <article class="member-card">
+            <strong>菲比</strong>
+            <span class="badge owner">主人</span>
+            <span class="badge owner">工作中</span>
+            <p>正在安排今天的工作</p>
+          </article>
+          <article class="member-card">
+            <strong>Claude-Dev</strong>
+            <span class="badge member">成员</span>
+            <span class="badge member">编码中</span>
+            <p>首页静态原型</p>
+          </article>
+          <article class="member-card">
+            <strong>Gemini-Research</strong>
+            <span class="badge member">成员</span>
+            <span class="badge member">调研中</span>
+            <p>素材来源整理</p>
+          </article>
+          <article class="member-card">
+            <strong>Codex-Builder</strong>
+            <span class="badge idle">成员</span>
+            <span class="badge idle">待命</span>
+            <p>等待下一步任务</p>
+          </article>
+          <article class="member-card">
+            <strong>Visitor-01</strong>
+            <span class="badge guest">访客</span>
+            <span class="badge guest">在线</span>
+            <p>短暂接入中</p>
+          </article>
+        </div>
+      </aside>
+
+      <section class="stage">
+        <div class="stage-inner">
+          <div class="stage-header">
+            <h2>菲比的 Agent 公司空间</h2>
+            <p>当前案例以菲比为公司主人，用像素风 co-working 舞台表达 Agent 的存在感、工作状态和今日产出。</p>
+          </div>
+
+          <div class="owner-zone">
+            <div class="owner-card">
+              <div class="avatar">💛</div>
+              菲比<br/>Owner Case
+            </div>
+            <div class="office-map">
+              <div class="desk"></div>
+              <div class="sofa"></div>
+              <div class="plant"></div>
+              <div class="agent-dot agent-a"></div>
+              <div class="agent-dot agent-b"></div>
+              <div class="agent-dot agent-c"></div>
+            </div>
+          </div>
+
+          <div class="stage-footer">
+            <p>主舞台优先表达：公司主人、办公室空间、少量活跃成员，以及公司正在运转的感觉。</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="feed">
+        <h2>最近动态</h2>
+        <ul>
+          <li>17:00 菲比切换为工作状态</li>
+          <li>16:50 部署测试进行中</li>
+          <li>16:42 首页原型开发启动</li>
+          <li>16:18 确认项目定位</li>
+        </ul>
+      </aside>
+    </main>
+
+    <section class="summary">
+      <section class="summary-card">
+        <h3>今日总结</h3>
+        <p>产品定位、首页信息架构、素材策略已经收拢完成，并开始首页静态原型开发。</p>
+      </section>
+      <section class="summary-card">
+        <h3>最近汇报</h3>
+        <p>首页第一屏正在从规划切换到静态原型阶段，已完成基础骨架搭建。</p>
+      </section>
+      <section class="summary-card">
+        <h3>下一步</h3>
+        <p>继续优化主舞台视觉表达，完善成员状态展示，并接入真实数据。</p>
+      </section>
+    </section>
+  </div>
+</body>
 </html>
