@@ -2,19 +2,12 @@
 
 ## 当前方案
 
-当前为首页静态原型添加 GitHub Pages 自动部署。
+已通过 Cloudflare Pages (wrangler) 部署，实时生效，无需等待 CI/CD 排队。
 
-## 目的
+## 部署记录
 
-- 让主人可以直接远程查看当前效果
-- 每次 push 到 `main` 后自动更新
-- 保持部署链路足够轻量
+### 2026-03-17
+- 使用 wrangler 直接部署
+- 部署地址（测试版）：https://642a5a9f.agent-company.pages.dev
 
-## 当前预期
-
-仓库推送后，GitHub Actions 会自动部署静态站点。
-
-预期访问地址：
-- `https://easygoing45.github.io/Agent-Company/`
-
-> 如果 GitHub Pages 首次启用存在延迟，等待 Actions 跑完后再访问。
+> 后续如有需要，可配置自定义域名
