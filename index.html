@@ -896,17 +896,7 @@ body::after {
       <div class="quick-action" onclick="toggleDrawer()"><span class="icon">📁</span><span class="label">面板</span></div>
     </section>
 
-    <section class="timeline" id="timeline">
-      <div class="timeline-item active"><span class="time">09:00</span>早上好</div>
-      <div class="timeline-item"><span class="time">10:00</span>开始工作</div>
-      <div class="timeline-item"><span class="time">11:00</span>处理任务</div>
-      <div class="timeline-item"><span class="time">12:00</span>午休</div>
-      <div class="timeline-item"><span class="time">13:00</span>下午</div>
-      <div class="timeline-item"><span class="time">14:00</span>继续</div>
-      <div class="timeline-item"><span class="time">15:00</span>汇报</div>
-      <div class="timeline-item"><span class="time">16:00</span>总结</div>
-      <div class="timeline-item"><span class="time">17:00</span>下班</div>
-    </section>
+    <section class="timeline" id="timeline"></section>
 
     <section class="summary" id="summarySection"></section>
   </div>
@@ -958,7 +948,7 @@ body::after {
   <script>
     // Custom pixel art avatars
 const pixelAvatars = {
-  phoebe: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZkODY2Ii8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMiIgZmlsbD0iI2ZmZDg2NiIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIyIiB5PSIzIiB3aWR0aD0iNCIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzJhMmE0YSIvPjxyZWN0IHg9IjUiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyYTJhNGEiLz48cmVjdCB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZiNmMxIi8+PHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iI2ZmYjZjMSIvPjxyZWN0IHg9IjMiIHk9IjYiIHdpZHRoPSIyIiBoZWlnaHQ9IjEiIGZpbGw9IiNmZmI3YjciLz48cmVjdCB4PSIwIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNmVjNGZmIi8+PHJlY3QgeD0iNyIgeT0iMSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzZlYzRmZiIvPjwvc3ZnPg==",
+  phoebe: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiIgc2hhcGUtcmVuZGVyaW5nPSJjcmlzcEVkZ2VzIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjMGQxMTE3Ii8+CiAgCiAgPCEtLSBIYWlyIGJhY2sgKGdvbGRlbiAtIOiPsuavlOagh+W/l+aAp+eahOmHkeiJsuWktOWPkSkgLS0+CiAgPHJlY3QgeD0iNCIgeT0iMSIgd2lkdGg9IjgiIGhlaWdodD0iMiIgZmlsbD0iI2ZmZDg2NiIvPgogIDxyZWN0IHg9IjMiIHk9IjIiIHdpZHRoPSIyIiBoZWlnaHQ9IjMiIGZpbGw9IiNmZmQ4NjYiLz4KICA8cmVjdCB4PSIxMSIgeT0iMiIgd2lkdGg9IjIiIGhlaWdodD0iMyIgZmlsbD0iI2ZmZDg2NiIvPgogIDxyZWN0IHg9IjMiIHk9IjQiIHdpZHRoPSIyIiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmQ4NjYiLz4KICA8cmVjdCB4PSIxMSIgeT0iNCIgd2lkdGg9IjIiIGhlaWdodD0iNCIgZmlsbD0iI2ZmZDg2NiIvPgogIAogIDwhLS0gRmFjZSAoc2tpbikgLS0+CiAgPHJlY3QgeD0iNSIgeT0iMyIgd2lkdGg9IjYiIGhlaWdodD0iNSIgZmlsbD0iI2ZmZTRjNCIvPgogIAogIDwhLS0gRXllcyAoY2xvc2VkL2RyZWFteSAtIOiPsuavlOeahOecvOelnikgLS0+CiAgPHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjIiIGhlaWdodD0iMSIgZmlsbD0iIzVhNWE4YSIvPgogIDxyZWN0IHg9IjkiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM1YTVhOGEiLz4KICAKICA8IS0tIEJsdWUgaGFpciBjbGlwcyAo5qCH5b+X5oCn6JOd6Imy5Y+R5aS5KSAtLT4KICA8cmVjdCB4PSI0IiB5PSIzIiB3aWR0aD0iMSIgaGVpZ2h0PSIyIiBmaWxsPSIjNmVjNGZmIi8+CiAgPHJlY3QgeD0iMTEiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjIiIGZpbGw9IiM2ZWM0ZmYiLz4KICAKICA8IS0tIEJvZHkgKG51biBvdXRmaXQgLSDkv67lpbPmnI3oo4UpIC0tPgogIDxyZWN0IHg9IjUiIHk9IjgiIHdpZHRoPSI2IiBoZWlnaHQ9IjUiIGZpbGw9IiM1YThhYzkiLz4KICA8cmVjdCB4PSI2IiB5PSI4IiB3aWR0aD0iNCIgaGVpZ2h0PSIxIiBmaWxsPSIjNGE3YWI5Ii8+CiAgCiAgPCEtLSBDb2xsYXIgKGdvbGRlbiBkZWNvcmF0aW9uKSAtLT4KICA8cmVjdCB4PSI2IiB5PSI4IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZkODY2Ii8+CiAgPHJlY3QgeD0iOSIgeT0iOCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iI2ZmZDg2NiIvPgogIAogIDwhLS0gUHJpc20gZ2xvdyAo6KGN5bCE5bGe5oCn5YWJ5pWIgLS0+CiAgPHJlY3QgeD0iMyIgeT0iOSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iI2ZmOWVjZCIgb3BhY2l0eT0iMC45Ii8+CiAgPHJlY3QgeD0iMTMiIHk9IjkiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNjNDliZmYiIG9wYWNpdHk9IjAuOSIvPgogIDxyZWN0IHg9IjQiIHk9IjEwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZkODY2IiBvcGFjaXR5PSIwLjciLz4KICA8cmVjdCB4PSIxMiIgeT0iMTAiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM2ZWM0ZmYiIG9wYWNpdHk9IjAuNyIvPgogIAogIDwhLS0gQXJtcyAoc2tpbikgLS0+CiAgPHJlY3QgeD0iNCIgeT0iOSIgd2lkdGg9IjEiIGhlaWdodD0iMyIgZmlsbD0iI2ZmZTRjNCIvPgogIDxyZWN0IHg9IjExIiB5PSI5IiB3aWR0aD0iMSIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+CiAgCiAgPCEtLSBQaG90byBib3ggKOeItuS6MumAgeeaheeZh+eJhOeJhyBuJuQoCkgLS0+CiAgPHJlY3QgeD0iMTMiIHk9IjExIiB3aWR0aD0iMiIgaGVpZ2h0PSIyIiBmaWxsPSIjNWE0YTNhIi8+CiAgPHJlY3QgeD0iMTMiIHk9IjExIiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjYzlhODRjIi8+CiAgPHJlY3QgeD0iMTMiIHk9IjEyIiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjNGEzYTJhIi8+Cjwvc3ZnPgo=",
   claude: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiM2ZWM0ZmYiLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjNmVjNGZmIi8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMyIgZmlsbD0iIzZlYzRmZiIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjMiIGZpbGw9IiM2ZWM0ZmYiLz48cmVjdCB4PSIyIiB5PSIzIiB3aWR0aD0iNCIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzU1NjUiLz48cmVjdCB4PSI1IiB5PSI0IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNTU2NSIvPjxyZWN0IHg9IjEiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM1NTY1Ii8+PHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzU1NjUiLz48cmVjdCB4PSIzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjMzMzIi8+PC9zdmc+",
   gemini: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmI3YjciLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZiN2I3Ii8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMyIgZmlsbD0iI2ZmYjdiNyIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjMiIGZpbGw9IiNmZmI3YjciLz48cmVjdCB4PSIyIiB5PSIzIiB3aWR0aD0iNCIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzU1NjUiLz48cmVjdCB4PSI1IiB5PSI0IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNTU2NSIvPjxyZWN0IHg9IjEiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM1NTY1Ii8+PHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzU1NjUiLz48cmVjdCB4PSIzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZhMTAwIi8+PC9zdmc+",
   codex: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiM2ZmZmZmYiLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjNmZmZmZmIi8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMyIgZmlsbD0iIzZmZmZmZiIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjMiIGZpbGw9IjY2ZmZmZiIvPjxyZWN0IHg9IjIiIHk9IjMiIHdpZHRoPSI0IiBoZWlnaHQ9IjMiIGZpbGw9IiNmZmU3YzQiLz48cmVjdCB4PSIyIiB5PSI0IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNTU2NSIvPjxyZWN0IHg9IjUiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IjU1NjUiLz48cmVjdCB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNTU2NSIvPjxyZWN0IHg9IjYiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IjU1NjUiLz48cmVjdCB4PSIzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZhMTAwIi8+PC9zdmc+",
@@ -997,7 +987,9 @@ const members = [
       {id:'team_leader',name:'团队领袖',icon:'👑',desc:'管理5人团队'},
       {id:'code_ninja',name:'代码忍者',icon:'🥷',desc:'完成10个任务'},
       {id:'night_owl',name:'夜猫子',icon:'🦉',desc:'在凌晨时段签到'},
-      {id:'early_bird',name:'早起鸟',icon:'🐦',desc:'在早晨签到'}
+      {id:'early_bird',name:'早起鸟',icon:'🐦',desc:'在早晨签到'},
+      {id:'checkin_streak',name:'签到达人',icon:'📍',desc:'一天内签到3次'},
+      {id:'task_master',name:'任务大师',icon:'📋',desc:'完成5个任务'}
     ];
 
     function renderMembers() {
@@ -1184,10 +1176,54 @@ const members = [
     }
 
     function renderTaskList() {
-      return tasks.map(t => {
+      if(tasks.length === 0) return '<p style="color:var(--muted);text-align:center;padding:20px;">暂无任务，添加一个吧！</p>';
+      return tasks.map((t, i) => {
         const member = members.find(m => m.id === t.member);
-        return `<div class="task-item"><div class="task-info"><div class="date">${t.title}</div><div class="task-member">${member?.name || '未知'}</div></div><div class="task-progress"><div class="task-progress-bar" style="width:${t.progress}%"></div></div></div>`;
-      }).join('') || '<p style="color:var(--muted)">暂无任务</p>';
+        const doneStyle = t.done ? 'opacity:0.5;text-decoration:line-through;' : '';
+        return `<div class="task-item" style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-soft);border:2px solid var(--line-dim);margin-bottom:8px;cursor:pointer;${doneStyle}" onclick="toggleTask(${t.id})">
+          <span style="font-size:18px;${t.done?'color:var(--green)':'color:var(--line)'}">${t.done?'✓':'○'}</span>
+          <div style="flex:1;">
+            <div style="font-size:15px;${doneStyle}">${t.title}</div>
+            <div style="font-size:12px;color:var(--muted);">${member?.name || '未知'} · ${t.progress}%</div>
+          </div>
+          ${!t.done ? `<button class="action-btn" style="padding:4px 8px;font-size:12px;" onclick="event.stopPropagation();completeTask(${t.id})">完成</button>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    function toggleTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if(task) {
+        task.done = !task.done;
+        if(task.done) task.progress = 100;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        showToast(task.done ? '任务完成！' : '任务已取消完成');
+        document.getElementById('modalBody').querySelector('.task-list').innerHTML = renderTaskList();
+        renderSummary();
+        updateDrawer();
+      }
+    }
+
+    function completeTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if(task) {
+        task.done = true;
+        task.progress = 100;
+        const xpGained = 20 + Math.floor(Math.random() * 10);
+        currentUser.xp += xpGained;
+        addActivity(`✓ 完成任务: ${task.title} +${xpGained} XP`);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        // Check task_master achievement
+        const doneCount = tasks.filter(t => t.done).length;
+        if(doneCount >= 5 && !unlockedAchievements.includes('task_master')) {
+          unlockAchievement('task_master');
+        }
+        showToast(`任务完成！+${xpGained} XP`);
+        document.getElementById('modalBody').querySelector('.task-list').innerHTML = renderTaskList();
+        renderSummary();
+        updateMeta();
+        updateDrawer();
+      }
     }
 
     function saveTask() {
@@ -1198,7 +1234,9 @@ const members = [
       localStorage.setItem('tasks',JSON.stringify(tasks));
       showToast('任务添加成功！');
       renderSummary();
-      closeModal();
+      updateDrawer();
+      // Re-open tasks modal with new list
+      openModal('tasks');
     }
 
     function unlockAchievement(id) {
@@ -1213,19 +1251,70 @@ const members = [
     function showMemberDetail(memberId) {
       const member = members.find(m => m.id === memberId);
       if(!member) return;
-      openModal('memberDetail');
-      document.getElementById('modalTitle').textContent = member.name;
-      document.getElementById('modalBody').innerHTML = `<div style="text-align:center;padding:20px;"><img src="${member.avatar}" style="width:80px;height:80px;image-rendering:pixelated;border-radius:12px;border:3px solid var(--gold);margin-bottom:12px;"><div style="color:var(--gold);font-size:20px;margin-bottom:8px;">${member.name}</div><div style="color:var(--muted);font-size:14px;margin-bottom:16px;">${member.role==='owner'?'公司主人':member.role==='guest'?'访客':'成员'}</div><div style="margin-bottom:8px;"><span class="badge ${member.status}"><span class="status-dot ${member.status}"></span>${statusLabels[member.status]}</span></div><p style="color:var(--muted);font-size:14px;">任务: ${member.task}</p><div class="energy-bar" style="margin-top:16px;"><div class="energy" style="width:${member.energy}%"></div></div><p style="color:var(--muted);font-size:12px;margin-top:8px;">经验值: ${member.xp}</p></div>`;
+      const overlay = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      title.textContent = member.name;
+      body.innerHTML = `<div style="text-align:center;padding:20px;">
+        <img src="${member.avatar}" style="width:80px;height:80px;image-rendering:pixelated;border-radius:12px;border:3px solid var(--gold);margin-bottom:12px;">
+        <div style="color:var(--gold);font-size:20px;margin-bottom:8px;">${member.name}</div>
+        <div style="color:var(--muted);font-size:14px;margin-bottom:16px;">${member.role==='owner'?'公司主人':member.role==='guest'?'访客':'成员'}</div>
+        <div style="margin-bottom:8px;"><span class="badge ${member.status}"><span class="status-dot ${member.status}"></span>${statusLabels[member.status]}</span></div>
+        <p style="color:var(--muted);font-size:14px;">任务: ${member.task}</p>
+        <div class="energy-bar" style="margin-top:16px;"><div class="energy" style="width:${member.energy}%"></div></div>
+        <p style="color:var(--muted);font-size:12px;margin-top:8px;">经验值: ${member.xp} XP</p>
+        <div style="margin-top:16px;">
+          <button class="action-btn" onclick="changeMemberStatus('${member.id}','working')" style="margin:4px;">工作中</button>
+          <button class="action-btn" onclick="changeMemberStatus('${member.id}','online')" style="margin:4px;">在线</button>
+          <button class="action-btn" onclick="changeMemberStatus('${member.id}','idle')" style="margin:4px;">待命</button>
+        </div>
+      </div>`;
+      overlay.classList.add('show');
+    }
+
+    function changeMemberStatus(memberId, newStatus) {
+      const member = members.find(m => m.id === memberId);
+      if(member) {
+        member.status = newStatus;
+        member.task = {working:'工作中',online:'在线',idle:'待命'}[newStatus] || '待命';
+        addActivity(`${member.name} → ${statusLabels[newStatus]}`);
+        renderMembers();
+        updateMeta();
+        closeModal();
+      }
     }
 
     function doCheckin() {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const hour = now.getHours();
       checkinRecords.unshift({ time: timeStr, date: now.toISOString().split('T')[0] });
       localStorage.setItem('checkinRecords', JSON.stringify(checkinRecords));
-      showToast('签到成功！');
+
+      // Award XP for check-in
+      const xpGained = 10 + Math.floor(Math.random() * 15);
+      currentUser.xp += xpGained;
+      addActivity(`✓ ${currentUser.name} 签到 +${xpGained} XP`);
+
+      // Check achievements
+      if(!unlockedAchievements.includes('first_checkin')) {
+        unlockAchievement('first_checkin');
+      }
+      if(hour < 6 && !unlockedAchievements.includes('night_owl')) {
+        unlockAchievement('night_owl');
+      }
+      if(hour >= 6 && hour < 9 && !unlockedAchievements.includes('early_bird')) {
+        unlockAchievement('early_bird');
+      }
+      const todayRecords = checkinRecords.filter(r => r.date === now.toISOString().split('T')[0]);
+      if(todayRecords.length >= 3 && !unlockedAchievements.includes('checkin_streak')) {
+        unlockAchievement('checkin_streak');
+      }
+
+      showToast(`签到成功！+${xpGained} XP`);
       renderSummary();
       updateMeta();
+      updateDrawer();
       closeModal();
     }
 
@@ -1247,7 +1336,8 @@ const members = [
       showToast('总结保存成功！');
       renderSummary();
       updateMeta();
-      closeModal();
+      updateDrawer();
+      openModal('summaryList');
     }
 
     function saveSettings() {
@@ -1296,13 +1386,36 @@ const members = [
     }
 
     function updateTimeline() {
+      const timeline = document.getElementById('timeline');
+      if(!timeline) return;
       const now = new Date();
-      const hour = now.getHours();
-      const items = document.querySelectorAll('.timeline-item');
-      items.forEach((item, i) => {
-        const itemHour = 9 + i;
-        item.classList.toggle('active', hour >= itemHour && hour < itemHour + 1);
-      });
+      const today = now.toISOString().split('T')[0];
+      const todayRecords = checkinRecords.filter(r => r.date === today);
+
+      // Build timeline with check-in records + current time indicator
+      const timeSlots = [
+        {label:'早上', hour:9}, {label:'上午', hour:11}, {label:'中午', hour:12},
+        {label:'下午', hour:14}, {label:'傍晚', hour:16}, {label:'晚上', hour:18}, {label:'深夜', hour:21}
+      ];
+
+      timeline.innerHTML = timeSlots.map(slot => {
+        const checkedIn = todayRecords.some(r => {
+          const h = parseInt(r.time.split(':')[0]);
+          return h >= slot.hour - 1 && h < slot.hour + 2;
+        });
+        const isNow = now.getHours() >= slot.hour - 1 && now.getHours() < slot.hour + 2;
+        return `<div class="timeline-item ${checkedIn ? 'active' : ''}" style="${isNow && !checkedIn ? 'border-color:var(--blue);' : ''}">
+          <span class="time">${slot.hour}:00</span>${slot.label}${checkedIn ? ' ✓' : ''}
+        </div>`;
+      }).join('');
+
+      // Also show recent check-ins as pills
+      if(todayRecords.length > 0) {
+        const pills = todayRecords.slice(0, 5).map(r =>
+          `<div class="timeline-item active" style="flex:0 0 auto;"><span class="time">${r.time}</span>签到</div>`
+        ).join('');
+        timeline.innerHTML += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pills + '</div>';
+      }
     }
 
     // Enhanced draw chart
