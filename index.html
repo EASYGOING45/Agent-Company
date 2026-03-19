@@ -835,11 +835,18 @@ body::after {
             <p>当前案例以菲比为公司主人，用像素风 co-working 舞台表达 Agent 的存在感、工作状态和今日产出。</p>
           </div>
           <div class="owner-zone">
-            <div class="owner-card" onclick="showToast('菲比的 Agent 公司')">
-              <img class="avatar-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZkODY2Ii8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMiIgZmlsbD0iI2ZmZDg2NiIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIyIiB5PSIzIiB3aWR0aD0iNCIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzJhMmE0YSIvPjxyZWN0IHg9IjUiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyYTJhNGEiLz48cmVjdCB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZiNmMxIi8+PHJlY3QgeD0iNiIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iI2ZmYjZjMSIvPjxyZWN0IHg9IjMiIHk9IjYiIHdpZHRoPSIyIiBoZWlnaHQ9IjEiIGZpbGw9IiNmZmI3YjciLz48cmVjdCB4PSIwIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjNmVjNGZmIi8+PHJlY3QgeD0iNyIgeT0iMSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzZlYzRmZiIvPjwvc3ZnPg==" alt="菲比">
+            <div class="owner-card" onclick="showMemberDetail('phoebe')">
+              <span class="level-badge">Lv.<span id="ownerLevel">1</span></span>
+              <img class="avatar-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZkODY2Ii8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMiIgZmlsbD0iI2ZmZDg2NiIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIyIiB5PSIzIiB3aWR0aD0iNCIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzJhMmE0YSIvPjxyZWN0IHg9IjUiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyYTJhNGEiLz48cmVjdCB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2hodD0iMSIgZmlsbD0iI2ZmYjZjMSIvPjxyZWN0IHg9IjYiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNmZmI2YzEiLz48cmVjdCB4PSIzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZiN2I3Ii8+PHJlY3QgeD0iMCIgeT0iMSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzZlYzRmZiIvPjxyZWN0IHg9IjciIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM2ZWM0ZmYiLz48L3N2Zz4=" alt="菲比">
               <div class="name">菲比</div>
               <div class="title">COMPANY OWNER</div>
               <div class="status" id="ownerStatus">◉工作中</div>
+              <div style="margin-top:8px;">
+                <div class="xp-bar" style="margin:4px 0;">
+                  <div class="label" style="font-size:10px;"><span id="ownerXP">0</span> XP</span><span style="color:var(--muted)">下一级还需 <span id="ownerXpNext">500</span></span></div>
+                  <div class="progress" style="height:6px;background:var(--line-dim);border-radius:3px;overflow:hidden;"><div class="progress-fill" id="ownerLevelBar" style="height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));transition:width 0.5s;"></div></div>
+                </div>
+              </div>
             </div>
             <div class="office-map">
               <div class="welcome-sign office-el">WELCOME</div>
@@ -965,6 +972,10 @@ const members = [
 
     const statusLabels = { working: '工作中', online: '在线', idle: '待命', away: '离开' };
 
+    function getLevel(xp) { return Math.floor(xp / 500) + 1; }
+    function getLevelProgress(xp) { return (xp % 500) / 500 * 100; }
+    function getXpForNextLevel(xp) { return 500 - (xp % 500); }
+
     let checkinRecords = JSON.parse(localStorage.getItem('checkinRecords') || '[]');
     let summaries = JSON.parse(localStorage.getItem('summaries') || '[]');
     let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -1015,12 +1026,20 @@ const members = [
       const feed = document.getElementById('activityFeed');
       const now = new Date();
       const timeStr = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      const phrases = [
+        `${currentUser.name} 完成了一次深度思考`,
+        `${currentUser.name} 更新了任务状态`,
+        `系统进行了例行维护`,
+        `成员状态已同步`,
+        `新的活动已记录`,
+        `数据已完成备份`
+      ];
       const activities = [
-        { time: timeStr(now.getHours(), now.getMinutes() - 1), text: `${currentUser.name} 切换为工作状态` },
+        { time: timeStr(now.getHours(), now.getMinutes() - 1), text: phrases[Math.floor(Math.random() * phrases.length)] },
+        { time: timeStr(now.getHours(), now.getMinutes() - 3), text: '签到系统正常运行中' },
         { time: timeStr(now.getHours(), now.getMinutes() - 5), text: '系统初始化完成' },
-        { time: timeStr(now.getHours(), now.getMinutes() - 10), text: '签到系统就绪' },
-        { time: '22:30', text: '部署测试完成' },
-        { time: '22:20', text: '首页原型像素风增强' }
+        { time: timeStr(now.getHours(), now.getMinutes() - 8), text: 'Agent 公司已开业' },
+        { time: 'Yesterday', text: '完成了本周工作总结' }
       ];
       feed.innerHTML = activities.map(a => `<li onclick="showToast('${a.text}')">${a.time} ${a.text}</li>`).join('');
     }
@@ -1156,7 +1175,106 @@ const members = [
           title.textContent = '🏆 成就';
           body.innerHTML = `<div class="achievements" style="flex-direction:column;">${achievements.map(a=>`<div class="achievement ${unlockedAchievements.includes(a.id)?'unlocked':''}" style="padding:12px;margin-bottom:8px;" onclick="unlockAchievement('${a.id}')"><span class="icon">${a.icon}</span><strong>${a.name}</strong><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">${a.desc}</p>${unlockedAchievements.includes(a.id)?'<span style="color:var(--green)">✓ 已解锁</span>':''}</div>`).join('')}</div>`;
           break;
+        case 'stats':
+          title.textContent = '📊 数据统计';
+          body.innerHTML = buildStatsModal();
+          break;
+        case 'reports':
+          title.textContent = '📋 工作报告';
+          body.innerHTML = buildReportsModal();
+          break;
       }
+    }
+
+    function buildStatsModal() {
+      const doneTasks = tasks.filter(t => t.done).length;
+      const totalTasks = tasks.length;
+      const completionRate = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
+      const totalXP = members.reduce((s, m) => s + m.xp, 0);
+      const todayCheckins = checkinRecords.filter(r => r.date === new Date().toISOString().split('T')[0]).length;
+      const sortedMembers = [...members].sort((a, b) => b.xp - a.xp);
+
+      return `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:12px;text-align:center;border-radius:4px;">
+            <div style="font-size:28px;color:var(--gold);">${currentUser.xp}</div>
+            <div style="font-size:12px;color:var(--muted);">我的 XP</div>
+          </div>
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:12px;text-align:center;border-radius:4px;">
+            <div style="font-size:28px;color:var(--cyan);">${getLevel(currentUser.xp)}</div>
+            <div style="font-size:12px;color:var(--muted);">当前等级</div>
+          </div>
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:12px;text-align:center;border-radius:4px;">
+            <div style="font-size:28px;color:var(--green);">${todayCheckins}</div>
+            <div style="font-size:12px;color:var(--muted);">今日签到</div>
+          </div>
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:12px;text-align:center;border-radius:4px;">
+            <div style="font-size:28px;color:var(--purple);">${completionRate}%</div>
+            <div style="font-size:12px;color:var(--muted);">任务完成率</div>
+          </div>
+        </div>
+        <h4 style="color:var(--gold);margin:12px 0 8px;">▸ XP 排行榜</h4>
+        <div style="max-height:200px;overflow-y:auto;">
+          ${sortedMembers.map((m, i) => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg-soft);border:2px solid var(--line-dim);margin-bottom:6px;">
+              <span style="font-size:16px;color:${i===0?'var(--gold)':i===1?'var(--blue)':i===2?'var(--purple)':'var(--muted)'};width:20px;">${i+1}</span>
+              <img src="${m.avatar}" style="width:28px;height:28px;border-radius:4px;border:2px solid var(--line);">
+              <div style="flex:1;">
+                <div style="font-size:14px;">${m.name}</div>
+                <div style="font-size:11px;color:var(--muted);">Lv.${getLevel(m.xp)} · ${m.xp} XP</div>
+              </div>
+              <div class="xp-bar" style="width:80px;margin:0;">
+                <div class="progress" style="height:4px;background:var(--line-dim);border-radius:2px;"><div class="progress-fill" style="height:100%;width:${Math.min(getLevelProgress(m.xp),100)}%;background:var(--gold);"></div></div>
+              </div>
+            </div>`).join('')}
+        </div>
+        <h4 style="color:var(--gold);margin:12px 0 8px;">▸ 任务概览</h4>
+        <div style="padding:10px;background:var(--bg-soft);border:2px solid var(--line-dim);border-radius:4px;">
+          <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;">
+            <span>已完成</span><span style="color:var(--green);">${doneTasks} / ${totalTasks}</span>
+          </div>
+          <div style="height:8px;background:var(--line-dim);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${completionRate}%;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width 0.5s;"></div>
+          </div>
+        </div>`;
+    }
+
+    function buildReportsModal() {
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const weekCheckins = checkinRecords.filter(r => r.date >= weekAgo);
+      const weekTasks = tasks.filter(t => t.done && t.id > Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const totalXP = members.reduce((s, m) => s + m.xp, 0);
+      const summariesList = summaries.length > 0 ? summaries.slice(0, 5) : [
+        { date: now.toISOString().split('T')[0], content: '产品定位、首页信息架构、素材策略已经收拢完成，并开始首页静态原型开发。' },
+        { date: new Date(now.getTime() - 86400000).toISOString().split('T')[0], content: '首页第一屏正在从规划切换到静态原型阶段，已完成基础骨架搭建。' }
+      ];
+
+      return `
+        <h4 style="color:var(--gold);margin:0 0 12px;">▸ 本周概况</h4>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:10px;text-align:center;border-radius:4px;">
+            <div style="font-size:22px;color:var(--blue);">${weekCheckins.length}</div>
+            <div style="font-size:11px;color:var(--muted);">本周签到</div>
+          </div>
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:10px;text-align:center;border-radius:4px;">
+            <div style="font-size:22px;color:var(--green);">${weekTasks.length}</div>
+            <div style="font-size:11px;color:var(--muted);">完成任务</div>
+          </div>
+          <div style="background:var(--bg-soft);border:2px solid var(--line);padding:10px;text-align:center;border-radius:4px;">
+            <div style="font-size:22px;color:var(--purple);">${totalXP}</div>
+            <div style="font-size:11px;color:var(--muted);">总 XP</div>
+          </div>
+        </div>
+        <h4 style="color:var(--gold);margin:0 0 12px;">▸ 最近总结</h4>
+        <div style="max-height:220px;overflow-y:auto;">
+          ${summariesList.map(s => `
+            <div style="padding:10px;background:var(--bg-soft);border:2px solid var(--line-dim);margin-bottom:8px;">
+              <div style="font-size:13px;color:var(--gold);margin-bottom:4px;">${s.date}</div>
+              <div style="font-size:14px;color:var(--muted);">${s.content}</div>
+            </div>`).join('')}
+        </div>
+        <button class="action-btn primary" style="width:100%;margin-top:12px;" onclick="openModal('addSummary')">+ 写总结</button>`;
     }
 
     function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
@@ -1223,6 +1341,7 @@ const members = [
         renderSummary();
         updateMeta();
         updateDrawer();
+        updateOwnerCard();
       }
     }
 
@@ -1315,6 +1434,7 @@ const members = [
       renderSummary();
       updateMeta();
       updateDrawer();
+      updateOwnerCard();
       closeModal();
     }
 
@@ -1378,11 +1498,26 @@ const members = [
       toggle.textContent = drawer.classList.contains('open') ? '▶' : '◀';
     }
 
+    function updateOwnerCard() {
+      const level = getLevel(currentUser.xp);
+      const progress = getLevelProgress(currentUser.xp);
+      const xpNext = getXpForNextLevel(currentUser.xp);
+      const levelEl = document.getElementById('ownerLevel');
+      const xpEl = document.getElementById('ownerXP');
+      const xpNextEl = document.getElementById('ownerXpNext');
+      const levelBar = document.getElementById('ownerLevelBar');
+      if(levelEl) levelEl.textContent = level;
+      if(xpEl) xpEl.textContent = currentUser.xp;
+      if(xpNextEl) xpNextEl.textContent = xpNext;
+      if(levelBar) levelBar.style.width = progress + '%';
+    }
+
     function updateDrawer() {
       document.getElementById('drawerCheckins').textContent = checkinRecords.length;
       document.getElementById('drawerTasks').textContent = tasks.filter(t => t.done).length;
       const totalXP = members.reduce((sum, m) => sum + (m.xp || 0), 0);
-      document.getElementById('drawerXP').textContent = totalXP;
+      const xpEl = document.getElementById('drawerXP');
+      if(xpEl) xpEl.textContent = totalXP;
     }
 
     function updateTimeline() {
@@ -1494,6 +1629,7 @@ const members = [
     renderActivity();
     renderSummary();
     updateMeta();
+    updateOwnerCard();
     updateDrawer();
     setTimeout(drawStatsChart, 500);
 
@@ -1503,8 +1639,12 @@ const members = [
         document.querySelectorAll('.navlink').forEach(l => l.classList.remove('active'));
         link.classList.add('active');
         const panel = link.dataset.panel;
-        if (panel === 'settings') openModal('settings');
-        else showToast('切换到 ' + panel.toUpperCase());
+        switch(panel) {
+          case 'members': showToast('成员列表'); break;
+          case 'updates': openModal('reports'); break;
+          case 'reports': openModal('stats'); break;
+          case 'settings': openModal('settings'); break;
+        }
       });
     });
 
