@@ -157,6 +157,12 @@ body {
   padding: 14px;
 }
 
+.side-column {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
 .member-list,
 .presence-list {
   display: grid;
