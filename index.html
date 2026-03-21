@@ -274,13 +274,39 @@ body::after {
 .member-card .badge.owner { background: var(--gold-dim); color: var(--bg-deep); }
 .member-card .badge.member { background: var(--blue-dim); }
 .member-card .badge.idle { background: var(--line-dim); }
+.member-card .badge.online { background: rgba(110,196,255,0.18); color: var(--blue); border-color: var(--blue-dim); }
+.member-card .badge.busy { background: rgba(255,216,102,0.18); color: var(--gold); border-color: var(--gold-dim); }
+.member-card .badge.offline { background: rgba(255,123,123,0.18); color: var(--red); border-color: rgba(255,123,123,0.45); }
 .member-card .badge.guest { background: var(--purple); color: var(--bg-deep); }
 .member-card p { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.member-card .member-status-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+.member-card .status-message {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-dim);
+  background: rgba(10,10,20,0.28);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+.member-card .member-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
 
 .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; animation: pulse 2s infinite; }
 .status-dot.online { background: var(--green); }
-.status-dot.working { background: var(--gold); }
+.status-dot.busy { background: var(--gold); }
 .status-dot.idle { background: var(--muted); }
+.status-dot.offline { background: var(--red); animation: none; opacity: 0.55; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .stage { padding: 20px; }
@@ -470,7 +496,7 @@ body::after {
   height: 30px;
   top: 20px;
   right: 5%;
-  background: linear-gradient(180deg, var(--gold), var(--gold-dim);
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
   border: 3px solid var(--gold);
   border-radius: 4px;
   display: flex;
@@ -510,6 +536,9 @@ body::after {
 .agent-dot.working .status-ring { border-color: var(--green); }
 .agent-dot.online .status-ring { border-color: var(--blue); }
 .agent-dot.idle .status-ring { border-color: var(--muted); }
+.agent-dot.busy .status-ring { border-color: var(--gold); }
+.agent-dot.offline .status-ring { border-color: var(--red); animation: none; opacity: 0.45; }
+.agent-dot.offline img { opacity: 0.5; filter: grayscale(0.6); }
 @keyframes pulse-ring {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.1); opacity: 0.5; }
@@ -584,6 +613,38 @@ body::after {
 .status-selector { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .status-btn { padding: 6px 12px; border: 2px solid var(--line); background: var(--bg-soft); color: var(--muted); font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .status-btn:hover, .status-btn.active { border-color: var(--green); color: var(--green); }
+.status-editor-copy {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.status-editor-grid {
+  display: grid;
+  gap: 10px;
+}
+.status-editor-preview {
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(40,40,68,0.75) 0%, rgba(18,18,31,0.95) 100%);
+  border: 2px solid var(--line);
+  border-radius: 6px;
+}
+.status-editor-preview strong {
+  display: block;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.status-editor-preview p {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.status-editor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
 .modal-overlay.show { display: flex; }
@@ -705,6 +766,8 @@ body::after {
 .owner-card .status.working { color: var(--green); }
 .owner-card .status.online { color: var(--blue); }
 .owner-card .status.idle { color: var(--muted); }
+.owner-card .status.busy { color: var(--gold); }
+.owner-card .status.offline { color: var(--red); }
 .owner-card .energy-bar { margin-top: 14px; height: 8px; background: var(--line-dim); border-radius: 4px; overflow: hidden; }
 .owner-card .energy { height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); transition: width 0.5s ease; }
 
@@ -807,7 +870,7 @@ body::after {
       </div>
       <div class="meta">
         <p class="time" id="clock">Tuesday · 22:38</p>
-        <p id="summary"><span id="onlineCount">5</span> 位在线 · <span id="workingCount">2</span> 位工作 · <span id="xpTotal">3450</span> XP</p>
+        <p id="summary"><span id="onlineCount">4</span> 位在线 · <span id="workingCount">1</span> 位忙碌 · <span id="xpTotal">3450</span> XP</p>
         <p id="visitorCount" style="font-size:11px;color:var(--cyan);margin-top:4px;">👁️ 今日访客: <span id="todayVisitors">12</span> 人</p>
       </div>
       <nav class="nav">
@@ -835,12 +898,13 @@ body::after {
             <p>当前案例以菲比为公司主人，用像素风 co-working 舞台表达 Agent 的存在感、工作状态和今日产出。</p>
           </div>
           <div class="owner-zone">
-            <div class="owner-card" onclick="showMemberDetail('phoebe')">
+            <div class="owner-card" onclick="handleMemberSelection('phoebe', true)">
               <span class="level-badge">Lv.<span id="ownerLevel">1</span></span>
               <img class="avatar-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkMTExNyIvPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSI2IiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIwIiB5PSIyIiB3aWR0aD0iOCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZkODY2Ii8+PHJlY3QgeD0iMCIgeT0iMyIgd2lkdGg9IjIiIGhlaWdodD0iMiIgZmlsbD0iI2ZmZDg2NiIvPjxyZWN0IHg9IjYiIHk9IjMiIHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiNmZmQ4NjYiLz48cmVjdCB4PSIyIiB5PSIzIiB3aWR0aD0iNCIgaGVpZ2h0PSIzIiBmaWxsPSIjZmZlNGM0Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzJhMmE0YSIvPjxyZWN0IHg9IjUiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyYTJhNGEiLz48cmVjdCB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2hodD0iMSIgZmlsbD0iI2ZmYjZjMSIvPjxyZWN0IHg9IjYiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNmZmI2YzEiLz48cmVjdCB4PSIzIiB5PSI2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZiN2I3Ii8+PHJlY3QgeD0iMCIgeT0iMSIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0iIzZlYzRmZiIvPjxyZWN0IHg9IjciIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM2ZWM0ZmYiLz48L3N2Zz4=" alt="菲比">
               <div class="name">菲比</div>
               <div class="title">COMPANY OWNER</div>
-              <div class="status" id="ownerStatus">◉工作中</div>
+              <div class="status" id="ownerStatus">◉ 在线</div>
+              <div class="title" id="ownerStatusMessage" style="margin-top:8px;letter-spacing:0.5px;">Working on Agent-Company</div>
               <div style="margin-top:8px;">
                 <div class="xp-bar" style="margin:4px 0;">
                   <div class="label" style="font-size:10px;"><span id="ownerXP">0</span> XP</span><span style="color:var(--muted)">下一级还需 <span id="ownerXpNext">500</span></span></div>
@@ -865,17 +929,17 @@ body::after {
               <div class="plant-large office-el" title="大盆栽"></div>
               <div class="rug office-el" title="地毯"></div>
               
-              <div class="agent-dot agent-a office-el" title="Claude-Dev" onclick="showMemberDetail('claude')">
+              <div class="agent-dot agent-a office-el" data-member="claude" title="Claude-Dev" onclick="handleMemberSelection('claude')">
                 <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=claude&backgroundColor=0d1117" style="width:32px;height:32px;border-radius:50%;">
                 <div class="status-ring"></div>
                 <div class="agent-name">Claude-Dev</div>
               </div>
-              <div class="agent-dot agent-b office-el" title="Gemini-R" onclick="showMemberDetail('gemini')">
+              <div class="agent-dot agent-b office-el" data-member="gemini" title="Gemini-R" onclick="handleMemberSelection('gemini')">
                 <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=gemini&backgroundColor=0d1117" style="width:32px;height:32px;border-radius:50%;">
                 <div class="status-ring"></div>
                 <div class="agent-name">Gemini-R</div>
               </div>
-              <div class="agent-dot agent-c office-el" title="Codex-B" onclick="showMemberDetail('codex')">
+              <div class="agent-dot agent-c office-el" data-member="codex" title="Codex-B" onclick="handleMemberSelection('codex')">
                 <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=codex&backgroundColor=0d1117" style="width:32px;height:32px;border-radius:50%;">
                 <div class="status-ring"></div>
                 <div class="agent-name">Codex-B</div>
@@ -963,24 +1027,90 @@ const pixelAvatars = {
 };
 
 const members = [
-      { id: 'phoebe', name: '菲比', avatar: pixelAvatars.phoebe, role: 'owner', status: 'working', task: '安排今天的工作', energy: 85, xp: 1250 },
-      { id: 'claude', name: 'Claude-Dev', avatar: pixelAvatars.claude, role: 'member', status: 'working', task: '开发功能', energy: 70, xp: 980 },
-      { id: 'gemini', name: 'Gemini-R', avatar: pixelAvatars.gemini, role: 'member', status: 'online', task: '整理素材', energy: 90, xp: 720 },
-      { id: 'codex', name: 'Codex-B', avatar: pixelAvatars.codex, role: 'member', status: 'idle', task: '等待任务', energy: 100, xp: 450 },
-      { id: 'visitor', name: 'Visitor-01', avatar: pixelAvatars.visitor, role: 'guest', status: 'online', task: '参观中', energy: 100, xp: 50 }
+      { id: 'phoebe', name: '菲比', avatar: pixelAvatars.phoebe, role: 'owner', status: 'online', statusMessage: 'Working on Agent-Company', energy: 85, xp: 1250 },
+      { id: 'claude', name: 'Claude-Dev', avatar: pixelAvatars.claude, role: 'member', status: 'busy', statusMessage: 'Shipping the status system', energy: 70, xp: 980 },
+      { id: 'gemini', name: 'Gemini-R', avatar: pixelAvatars.gemini, role: 'member', status: 'online', statusMessage: 'Collecting homepage materials', energy: 90, xp: 720 },
+      { id: 'codex', name: 'Codex-B', avatar: pixelAvatars.codex, role: 'member', status: 'idle', statusMessage: 'Waiting for the next ticket', energy: 100, xp: 450 },
+      { id: 'visitor', name: 'Visitor-01', avatar: pixelAvatars.visitor, role: 'guest', status: 'offline', statusMessage: 'Left the office for today', energy: 100, xp: 50 }
     ];
+    const defaultMemberState = members.reduce((acc, member) => {
+      acc[member.id] = {
+        status: member.status,
+        statusMessage: member.statusMessage
+      };
+      return acc;
+    }, {});
 
-    const statusLabels = { working: '工作中', online: '在线', idle: '待命', away: '离开' };
+    const statusLabels = { online: '在线', idle: '待命', busy: '忙碌', offline: '离线' };
+    const statusHints = { online: '在线可协作', idle: '空闲可分配', busy: '专注处理中', offline: '暂时不在线' };
+    const statusEditorPresets = {
+      online: 'Working on Agent-Company',
+      idle: 'Waiting for the next assignment',
+      busy: 'Focused on the current sprint',
+      offline: 'Away from the office'
+    };
 
     function getLevel(xp) { return Math.floor(xp / 500) + 1; }
     function getLevelProgress(xp) { return (xp % 500) / 500 * 100; }
     function getXpForNextLevel(xp) { return 500 - (xp % 500); }
 
+    const STATUS_STORAGE_KEY = 'memberStatusesV2';
     let checkinRecords = JSON.parse(localStorage.getItem('checkinRecords') || '[]');
     let summaries = JSON.parse(localStorage.getItem('summaries') || '[]');
     let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     let unlockedAchievements = JSON.parse(localStorage.getItem('achievements') || '[]');
     let currentUser = members[0];
+    let selectedMemberId = currentUser.id;
+
+    function loadMemberStatuses() {
+      const saved = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+      members.forEach(member => {
+        const statusState = saved[member.id];
+        if (!statusState) return;
+        member.status = statusState.status || member.status;
+        member.statusMessage = statusState.statusMessage || member.statusMessage;
+      });
+    }
+
+    function persistMemberStatuses() {
+      const payload = members.reduce((acc, member) => {
+        acc[member.id] = {
+          status: member.status,
+          statusMessage: member.statusMessage
+        };
+        return acc;
+      }, {});
+      localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function resetMemberStatuses() {
+      members.forEach(member => {
+        member.status = defaultMemberState[member.id].status;
+        member.statusMessage = defaultMemberState[member.id].statusMessage;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getStatusMessage(member) {
+      return member.statusMessage || statusEditorPresets[member.status] || 'Standing by';
+    }
+
+    function syncOfficeDots() {
+      document.querySelectorAll('.agent-dot[data-member]').forEach(dot => {
+        const member = members.find(item => item.id === dot.dataset.member);
+        if (!member) return;
+        dot.classList.remove('online', 'idle', 'busy', 'offline', 'working');
+        dot.classList.add(member.status);
+      });
+    }
 
     // Default tasks
     if(tasks.length === 0) {
@@ -1006,20 +1136,39 @@ const members = [
     function renderMembers() {
       const list = document.getElementById('memberList');
       list.innerHTML = members.map(m => `
-        <article class="member-card ${m.id === currentUser.id ? 'selected' : ''}" data-member="${m.id}">
+        <article class="member-card ${m.id === selectedMemberId ? 'selected' : ''}" data-member="${m.id}">
           <strong><img class="member-avatar" src="${m.avatar}" alt=""> ${m.name}</strong>
           <span class="badge ${m.role}">${m.role === 'owner' ? '主人' : m.role === 'guest' ? '访客' : '成员'}</span>
-          <span class="badge ${m.status}"><span class="status-dot ${m.status}"></span>${statusLabels[m.status]}</span>
-          <p>${m.task}</p>
+          <div class="member-status-line">
+            <span class="badge ${m.status}"><span class="status-dot ${m.status}"></span>${statusLabels[m.status]}</span>
+            <span class="badge">${statusHints[m.status]}</span>
+          </div>
+          <div class="status-message">${escapeHtml(getStatusMessage(m))}</div>
+          ${m.id === currentUser.id ? '<div class="member-hint">CLICK TO EDIT YOUR STATUS</div>' : ''}
         </article>
       `).join('');
       document.querySelectorAll('.member-card').forEach(card => {
         card.addEventListener('click', () => {
-          document.querySelectorAll('.member-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          showToast(card.querySelector('strong').textContent + ' 被选中');
+          handleMemberSelection(card.dataset.member);
         });
       });
+      syncOfficeDots();
+      updateOwnerCard();
+    }
+
+    function handleMemberSelection(memberId, fromOwnerCard = false) {
+      const member = members.find(item => item.id === memberId);
+      if (!member) return;
+      selectedMemberId = memberId;
+      renderMembers();
+      if (memberId === currentUser.id) {
+        openStatusEditor(memberId);
+        return;
+      }
+      if (!fromOwnerCard) {
+        showToast(`${member.name} 状态已查看`);
+      }
+      showMemberDetail(memberId);
     }
 
     function renderActivity() {
@@ -1028,7 +1177,7 @@ const members = [
       const timeStr = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       const phrases = [
         `${currentUser.name} 完成了一次深度思考`,
-        `${currentUser.name} 更新了任务状态`,
+        `${currentUser.name} 更新了个人状态`,
         `系统进行了例行维护`,
         `成员状态已同步`,
         `新的活动已记录`,
@@ -1075,7 +1224,6 @@ const members = [
           <div class="achievements">
             ${achievements.slice(0,4).map(a => `<div class="achievement ${unlockedAchievements.includes(a.id)?'unlocked':''}" onclick="event.stopPropagation();showToast('${a.desc}')"><span class="icon">${a.icon}</span>${a.name}</div>`).join('')}
           </div>
-        </section>`;
         </section>
         <section class="summary-card" onclick="openModal('settings')">
           <h3>▸ CONFIG</h3>
@@ -1088,8 +1236,8 @@ const members = [
     }
 
     function updateMeta() {
-      const online = members.filter(m => m.status !== 'idle').length;
-      const working = members.filter(m => m.status === 'working').length;
+      const online = members.filter(m => m.status !== 'offline').length;
+      const working = members.filter(m => m.status === 'busy').length;
       const totalXP = members.reduce((sum, m) => sum + (m.xp || 0), 0);
       
       // Update existing elements if they exist
@@ -1103,7 +1251,7 @@ const members = [
         workingEl.textContent = working;
         xpEl.textContent = totalXP;
       } else if (summaryEl) {
-        summaryEl.textContent = `${members.length} 位成员 · ${working} 位工作中`;
+        summaryEl.textContent = `${online} 位在线 · ${working} 位忙碌`;
       }
       
       // Simulate visitor count
@@ -1111,6 +1259,59 @@ const members = [
         const baseVisitors = parseInt(localStorage.getItem('todayVisitors') || '12');
         document.getElementById('todayVisitors').textContent = baseVisitors + Math.floor(Math.random() * 5);
       }
+    }
+
+    function openStatusEditor(memberId = currentUser.id) {
+      const member = members.find(item => item.id === memberId);
+      if (!member) return;
+      const overlay = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      title.textContent = member.id === currentUser.id ? '更新我的状态' : `${member.name} 的状态`;
+      body.innerHTML = `
+        <p class="status-editor-copy">选择当前状态，并写一条会直接显示在成员卡上的短状态文案。</p>
+        <div class="status-editor-grid">
+          <div class="status-selector">
+            ${Object.entries(statusLabels).map(([key, label]) =>
+              `<button class="status-btn ${member.status === key ? 'active' : ''}" type="button" data-status-option="${key}">${label}</button>`
+            ).join('')}
+          </div>
+          <input id="statusMessageInput" maxlength="72" placeholder="例如：Working on Agent-Company" value="${escapeHtml(getStatusMessage(member))}">
+          <div class="status-editor-preview">
+            <strong id="statusPreviewLabel">◉ ${statusLabels[member.status]}</strong>
+            <p id="statusPreviewMessage">${escapeHtml(getStatusMessage(member))}</p>
+          </div>
+        </div>
+        <div class="status-editor-actions">
+          <button class="action-btn primary" type="button" onclick="saveStatusUpdate('${member.id}')">保存状态</button>
+          <button class="action-btn" type="button" onclick="closeModal()">取消</button>
+        </div>
+      `;
+      overlay.classList.add('show');
+
+      let selectedStatus = member.status;
+      const input = document.getElementById('statusMessageInput');
+      const previewLabel = document.getElementById('statusPreviewLabel');
+      const previewMessage = document.getElementById('statusPreviewMessage');
+
+      function refreshPreview() {
+        previewLabel.textContent = `◉ ${statusLabels[selectedStatus]}`;
+        previewMessage.textContent = input.value.trim() || statusEditorPresets[selectedStatus];
+      }
+
+      body.querySelectorAll('[data-status-option]').forEach(button => {
+        button.addEventListener('click', () => {
+          selectedStatus = button.dataset.statusOption;
+          body.querySelectorAll('[data-status-option]').forEach(item => item.classList.remove('active'));
+          button.classList.add('active');
+          if (!input.value.trim() || input.value === statusEditorPresets[member.status]) {
+            input.value = statusEditorPresets[selectedStatus];
+          }
+          refreshPreview();
+        });
+      });
+      input.addEventListener('input', refreshPreview);
+      body.dataset.selectedStatus = selectedStatus;
     }
 
     function openModal(type) {
@@ -1127,10 +1328,8 @@ const members = [
             <div class="checkin-records"><h4 style="color: var(--gold); margin: 16px 0 8px;">最近签到记录</h4>${renderCheckinRecords()}</div>`;
           break;
         case 'status':
-          title.textContent = '状态切换';
-          body.innerHTML = `<p style="margin-bottom: 16px;">选择你的状态：</p>
-            <div class="status-selector">${Object.entries(statusLabels).map(([key, label]) => 
-              `<button class="status-btn ${currentUser.status === key ? 'active' : ''}" onclick="changeStatus('${key}')">${label}</button>`).join('')}</div>`;
+          closeModal();
+          openStatusEditor(currentUser.id);
           break;
         case 'checkinRecords':
           title.textContent = '签到记录';
@@ -1379,14 +1578,10 @@ const members = [
         <div style="color:var(--gold);font-size:20px;margin-bottom:8px;">${member.name}</div>
         <div style="color:var(--muted);font-size:14px;margin-bottom:16px;">${member.role==='owner'?'公司主人':member.role==='guest'?'访客':'成员'}</div>
         <div style="margin-bottom:8px;"><span class="badge ${member.status}"><span class="status-dot ${member.status}"></span>${statusLabels[member.status]}</span></div>
-        <p style="color:var(--muted);font-size:14px;">任务: ${member.task}</p>
+        <p style="color:var(--muted);font-size:14px;">状态说明: ${escapeHtml(getStatusMessage(member))}</p>
         <div class="energy-bar" style="margin-top:16px;"><div class="energy" style="width:${member.energy}%"></div></div>
         <p style="color:var(--muted);font-size:12px;margin-top:8px;">经验值: ${member.xp} XP</p>
-        <div style="margin-top:16px;">
-          <button class="action-btn" onclick="changeMemberStatus('${member.id}','working')" style="margin:4px;">工作中</button>
-          <button class="action-btn" onclick="changeMemberStatus('${member.id}','online')" style="margin:4px;">在线</button>
-          <button class="action-btn" onclick="changeMemberStatus('${member.id}','idle')" style="margin:4px;">待命</button>
-        </div>
+        ${member.id === currentUser.id ? `<div style="margin-top:16px;"><button class="action-btn primary" onclick="openStatusEditor('${member.id}')">编辑我的状态</button></div>` : ''}
       </div>`;
       overlay.classList.add('show');
     }
@@ -1395,10 +1590,12 @@ const members = [
       const member = members.find(m => m.id === memberId);
       if(member) {
         member.status = newStatus;
-        member.task = {working:'工作中',online:'在线',idle:'待命'}[newStatus] || '待命';
+        member.statusMessage = statusEditorPresets[newStatus] || getStatusMessage(member);
+        persistMemberStatuses();
         addActivity(`${member.name} → ${statusLabels[newStatus]}`);
         renderMembers();
         updateMeta();
+        updateDrawer();
         closeModal();
       }
     }
@@ -1438,12 +1635,31 @@ const members = [
       closeModal();
     }
 
-    function changeStatus(newStatus) {
-      currentUser.status = newStatus;
-      document.getElementById('ownerStatus').textContent = '◉' + statusLabels[newStatus];
-      showToast('状态已切换为 ' + statusLabels[newStatus]);
+    function saveStatusUpdate(memberId = currentUser.id) {
+      const member = members.find(item => item.id === memberId);
+      const modalBody = document.getElementById('modalBody');
+      if (!member || !modalBody) return;
+      const nextStatus = modalBody.dataset.selectedStatus || member.status;
+      const messageInput = document.getElementById('statusMessageInput');
+      const nextMessage = messageInput.value.trim() || statusEditorPresets[nextStatus];
+      const previousStatus = member.status;
+      const previousMessage = getStatusMessage(member);
+
+      member.status = nextStatus;
+      member.statusMessage = nextMessage;
+      persistMemberStatuses();
+
       renderMembers();
+      renderActivity();
+      renderSummary();
       updateMeta();
+      updateDrawer();
+      updateOwnerCard();
+
+      if (previousStatus !== nextStatus || previousMessage !== nextMessage) {
+        addActivity(`${member.name} 更新状态为 ${statusLabels[nextStatus]} · ${nextMessage}`);
+      }
+      showToast(`状态已更新为 ${statusLabels[nextStatus]}`);
       closeModal();
     }
 
@@ -1477,9 +1693,15 @@ const members = [
         localStorage.clear();
         checkinRecords = [];
         summaries = [];
+        tasks = [];
+        unlockedAchievements = [];
+        resetMemberStatuses();
         showToast('数据已清除');
+        renderMembers();
         renderSummary();
         updateMeta();
+        updateDrawer();
+        updateOwnerCard();
         closeModal();
       }
     }
@@ -1506,10 +1728,17 @@ const members = [
       const xpEl = document.getElementById('ownerXP');
       const xpNextEl = document.getElementById('ownerXpNext');
       const levelBar = document.getElementById('ownerLevelBar');
+      const ownerStatus = document.getElementById('ownerStatus');
+      const ownerStatusMessage = document.getElementById('ownerStatusMessage');
       if(levelEl) levelEl.textContent = level;
       if(xpEl) xpEl.textContent = currentUser.xp;
       if(xpNextEl) xpNextEl.textContent = xpNext;
       if(levelBar) levelBar.style.width = progress + '%';
+      if(ownerStatus) {
+        ownerStatus.textContent = `◉ ${statusLabels[currentUser.status]}`;
+        ownerStatus.className = `status ${currentUser.status}`;
+      }
+      if(ownerStatusMessage) ownerStatusMessage.textContent = getStatusMessage(currentUser);
     }
 
     function updateDrawer() {
@@ -1587,6 +1816,7 @@ const members = [
     }
 
     // Init
+    loadMemberStatuses();
     updateClock();
     setInterval(updateClock, 1000);
     updateTimeline();
@@ -1594,14 +1824,20 @@ const members = [
     
     // Status simulation - members change status over time
     function simulateStatusChanges() {
-      const statuses = ['working', 'online', 'idle', 'away'];
-      const statusTasks = ['正在编码', '整理素材', '等待任务', '思考中', '休息'];
+      const statuses = ['busy', 'online', 'idle', 'offline'];
+      const statusTasks = [
+        'Reviewing homepage interactions',
+        'Syncing design details',
+        'Waiting for assignment',
+        'Running background checks',
+        'Away from keyboard'
+      ];
       members.forEach(m => {
-        if(m.role === 'owner') return; // Skip owner
+        if(m.id === currentUser.id) return;
         if(Math.random() > 0.7) { // 30% chance to change
           const oldStatus = m.status;
           m.status = statuses[Math.floor(Math.random() * statuses.length)];
-          m.task = statusTasks[Math.floor(Math.random() * statusTasks.length)];
+          m.statusMessage = statusTasks[Math.floor(Math.random() * statusTasks.length)];
           if(oldStatus !== m.status) {
             addActivity(`${m.name} ${statusLabels[oldStatus]} → ${statusLabels[m.status]}`);
           }
