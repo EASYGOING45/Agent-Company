@@ -120,8 +120,10 @@ function renderMembersPanel() {
             <span class="badge ${member.accent}">${member.role}</span>
             <span class="badge ${member.accent === 'member' ? 'member' : member.accent}">${member.status}</span>
             <p>${member.note}</p>
+            <p>所在房间：${roomBadge(member.roomId)}</p>
             <p>行为：${member.behavior}</p>
             <p>工作区：${member.workspace}</p>
+            <p>持续时间：${member.duration}</p>
           </article>
         `).join('')}
       </div>
@@ -138,6 +140,86 @@ function renderOwnerCard(currentRoom) {
       <p>当前巡检：${currentRoom.name}</p>
       <p>${currentRoom.tagline}</p>
     </div>
+  `;
+}
+
+function renderFocusPanel(selectedMember, currentRoom) {
+  return `
+    <section class="focus-panel">
+      <div class="focus-header">
+        <div>
+          <p class="section-kicker">当前焦点成员</p>
+          <h3>${selectedMember.name}</h3>
+        </div>
+        <div class="focus-badges">
+          <span class="badge ${selectedMember.accent}">${selectedMember.role}</span>
+          <span class="badge ${selectedMember.accent === 'member' ? 'member' : selectedMember.accent}">${selectedMember.status}</span>
+        </div>
+      </div>
+      <p class="focus-note">${selectedMember.note}</p>
+      <div class="focus-grid">
+        <article class="info-card">
+          <span>所在房间</span>
+          <strong>${roomBadge(selectedMember.roomId)}</strong>
+        </article>
+        <article class="info-card">
+          <span>当前行为</span>
+          <strong>${selectedMember.behavior}</strong>
+        </article>
+        <article class="info-card">
+          <span>工作区</span>
+          <strong>${selectedMember.workspace}</strong>
+        </article>
+        <article class="info-card">
+          <span>状态时长</span>
+          <strong>${selectedMember.duration}</strong>
+        </article>
+      </div>
+      <div class="history-card">
+        <p class="section-kicker">状态历史</p>
+        <ul>
+          ${selectedMember.history.map((item) => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+      <div class="room-summary-strip">
+        <article class="info-card accent">
+          <span>当前房间</span>
+          <strong>${currentRoom.name}</strong>
+        </article>
+        <article class="info-card">
+          <span>成员数量</span>
+          <strong>${getMembersInRoom(currentRoom.id).length} 位</strong>
+        </article>
+        <article class="info-card">
+          <span>场景标签</span>
+          <strong>${currentRoom.tagline}</strong>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function renderRoomVisual(currentRoom, roomMembers, decorations) {
+  return `
+    <aside class="room-visual-shell">
+      <div class="room-visual-copy">
+        <p class="section-kicker">像素房间场景</p>
+        <h3>${currentRoom.name}</h3>
+        <p>${roomCopy[currentRoom.id]}</p>
+      </div>
+      <div class="office-map" aria-label="${currentRoom.name} 场景">
+        ${decorations.map((item) => `<div class="${item.className}">${item.label}</div>`).join('')}
+        ${roomMembers.map((member, index) => `
+          <button
+            class="agent-dot"
+            type="button"
+            data-member-id="${member.id}"
+            data-slot="${slots[index % slots.length]}"
+            title="${member.name}"
+          >${member.name.slice(0, 1)}</button>
+        `).join('')}
+      </div>
+    </aside>
   `;
 }
 
@@ -160,20 +242,14 @@ function renderScene() {
           <p>${roomCopy[currentRoom.id]}</p>
         </div>
 
-        <div class="owner-zone">
-          ${renderOwnerCard(currentRoom)}
-          <div class="office-map" aria-label="${currentRoom.name} 场景">
-            ${decorations.map((item) => `<div class="${item.className}">${item.label}</div>`).join('')}
-            ${roomMembers.map((member, index) => `
-              <button
-                class="agent-dot"
-                type="button"
-                data-member-id="${member.id}"
-                data-slot="${slots[index % slots.length]}"
-                title="${member.name}"
-              >${member.name.slice(0, 1)}</button>
-            `).join('')}
+        <div class="stage-content">
+          <div class="stage-main">
+            <div class="owner-zone">
+              ${renderOwnerCard(currentRoom)}
+              ${renderFocusPanel(selectedMember, currentRoom)}
+            </div>
           </div>
+          ${renderRoomVisual(currentRoom, roomMembers, decorations)}
         </div>
 
         <div class="stage-footer">
@@ -198,6 +274,7 @@ function renderPresencePanel() {
             <p>所在房间：${roomBadge(member.roomId)}</p>
             <p>当前状态：${member.status}</p>
             <p>当前行为：${member.behavior}</p>
+            <p>状态时长：${member.duration}</p>
           </article>
         `).join('')}
       </div>

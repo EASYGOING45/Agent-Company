@@ -71,8 +71,10 @@ export const members = [
     behavior: '统筹中',
     workspace: '元宇宙 2.0 升级',
     status: '工作中',
+    duration: '42 分钟',
     accent: 'owner',
     note: '正在安排今天的工作',
+    history: ['22:26 调整房间导航结构', '22:43 对齐主厅视觉层级'],
   },
   {
     id: 'claude',
@@ -82,8 +84,10 @@ export const members = [
     behavior: '开会中',
     workspace: '多房间架构',
     status: '编码中',
+    duration: '18 分钟',
     accent: 'member',
     note: '讨论房间切换逻辑',
+    history: ['22:34 汇报切换状态同步', '22:48 更新房间文案'],
   },
   {
     id: 'gemini',
@@ -93,8 +97,10 @@ export const members = [
     behavior: '调研中',
     workspace: '视觉参考板',
     status: '调研中',
+    duration: '33 分钟',
     accent: 'member',
     note: '整理配色与素材方向',
+    history: ['22:18 收敛暖色休息室氛围', '22:39 整理像素装饰参考'],
   },
   {
     id: 'codex',
@@ -104,8 +110,10 @@ export const members = [
     behavior: '实验中',
     workspace: '交互原型',
     status: '待命',
+    duration: '9 分钟',
     accent: 'idle',
     note: '等待下一步任务',
+    history: ['22:41 预留游戏室交互位', '22:52 准备修复房间主舞台遮挡'],
   },
   {
     id: 'visitor',
@@ -115,8 +123,10 @@ export const members = [
     behavior: '参观中',
     workspace: '入口接待',
     status: '在线',
+    duration: '12 分钟',
     accent: 'guest',
     note: '短暂接入中',
+    history: ['22:44 进入主厅参观', '22:58 查看房间切换演示'],
   },
 ];
 
