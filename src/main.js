@@ -1,78 +1,311 @@
-import { company, members, feed, summaries } from './data.js';
-import './styles.css';
+import { company, rooms, members, roomState, feed, summaries } from './data.js';
 
-const memberCards = members.map((m) => `
-  <article class="member-card">
-    <strong>${m.name}</strong>
-    <span class="badge ${m.accent}">${m.role}</span>
-    <span class="badge ${m.accent === 'member' ? 'member' : m.accent}">${m.status}</span>
-    <p>${m.note}</p>
-  </article>
-`).join('');
+const ROOM_STORAGE_KEY = 'agent-company-current-room';
 
-const feedItems = feed.map((item) => `<li>${item}</li>`).join('');
-const summaryCards = summaries.map((item) => `
-  <section class="summary-card">
-    <h3>${item.title}</h3>
-    <p>${item.body}</p>
-  </section>
-`).join('');
+const roomDecorMap = {
+  lobby: [
+    { className: 'pixel-sign office-el', label: 'WELCOME' },
+    { className: 'pixel-window office-el', label: '' },
+    { className: 'pixel-board office-el', label: '' },
+    { className: 'pixel-desk office-el', label: '' },
+    { className: 'pixel-monitor office-el', label: '' },
+    { className: 'pixel-sofa office-el', label: '' },
+    { className: 'pixel-plant office-el', label: '' },
+  ],
+  meeting: [
+    { className: 'pixel-screen office-el', label: '' },
+    { className: 'pixel-whiteboard office-el', label: '' },
+    { className: 'pixel-table office-el', label: '' },
+    { className: 'pixel-desk office-el', label: '' },
+    { className: 'pixel-plant office-el', label: '' },
+  ],
+  lounge: [
+    { className: 'pixel-window office-el', label: '' },
+    { className: 'pixel-sofa office-el', label: '' },
+    { className: 'pixel-coffee office-el', label: '' },
+    { className: 'pixel-sign office-el', label: 'LOUNGE' },
+    { className: 'pixel-plant office-el', label: '' },
+  ],
+  game: [
+    { className: 'pixel-sign office-el', label: 'PLAY' },
+    { className: 'pixel-console office-el', label: '' },
+    { className: 'pixel-cabinet office-el', label: '' },
+    { className: 'pixel-speaker office-el', label: '' },
+    { className: 'pixel-beanbag office-el', label: '' },
+  ],
+};
 
-document.querySelector('#app').innerHTML = `
-  <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <h1>${company.name}</h1>
-        <p>${company.ownerName} · ${company.ownerTitle}</p>
+const roomCopy = {
+  lobby: '总览主人、访客和当前营业状态，承担 Agent 公司入口门面。',
+  meeting: '围绕路线、任务和协作进行同步，成员展示更强调会议中的聚集感。',
+  lounge: '表现休息、恢复和灵感整理，让空间从持续工作切到轻松补能。',
+  game: '用更亮的灯色和像素设备表达高能互动，为团队制造“活着”的节奏。',
+};
+
+const slots = ['a', 'b', 'c', 'd'];
+
+const state = {
+  currentRoomId: loadCurrentRoomId(),
+  selectedMemberId: members[0]?.id ?? null,
+};
+
+function loadCurrentRoomId() {
+  const saved = localStorage.getItem(ROOM_STORAGE_KEY);
+  if (rooms.some((room) => room.id === saved)) {
+    return saved;
+  }
+  return roomState.currentRoomId || company.defaultRoomId;
+}
+
+function persistCurrentRoomId() {
+  localStorage.setItem(ROOM_STORAGE_KEY, state.currentRoomId);
+}
+
+function getCurrentRoom() {
+  return rooms.find((room) => room.id === state.currentRoomId) || rooms[0];
+}
+
+function getMembersInRoom(roomId) {
+  return members.filter((member) => member.roomId === roomId);
+}
+
+function getSelectedMember() {
+  return members.find((member) => member.id === state.selectedMemberId) || getMembersInRoom(state.currentRoomId)[0] || members[0];
+}
+
+function roomBadge(roomId) {
+  const room = rooms.find((item) => item.id === roomId);
+  return room ? room.name : '未分配';
+}
+
+function ensureSelectedMember() {
+  const visibleMembers = getMembersInRoom(state.currentRoomId);
+  if (!visibleMembers.some((member) => member.id === state.selectedMemberId)) {
+    state.selectedMemberId = visibleMembers[0]?.id || members[0]?.id || null;
+  }
+}
+
+function renderRoomTabs() {
+  const currentRoom = getCurrentRoom();
+  return `
+    <section class="room-tabs">
+      <ul class="room-tab-list">
+        ${rooms.map((room) => `
+          <li>
+            <button class="room-tab ${room.id === state.currentRoomId ? 'active' : ''}" type="button" data-room-id="${room.id}">
+              <strong>${room.name}</strong>
+              <span>${room.tagline}</span>
+            </button>
+          </li>
+        `).join('')}
+      </ul>
+      <div class="room-tabs-copy">
+        <p>当前房间</p>
+        <strong>${currentRoom.name}</strong>
+        <p>${currentRoom.description}</p>
       </div>
-      <div class="meta">
-        <p>${company.timeLabel}</p>
-        <p>${company.onlineSummary}</p>
+    </section>
+  `;
+}
+
+function renderMembersPanel() {
+  const visibleMembers = getMembersInRoom(state.currentRoomId);
+  return `
+    <aside class="member-rail">
+      <h2>▸ ROOM MEMBERS</h2>
+      <div class="member-list">
+        ${visibleMembers.map((member) => `
+          <article class="member-card ${member.id === state.selectedMemberId ? 'selected' : ''}" data-member-id="${member.id}">
+            <strong>${member.name}</strong>
+            <span class="badge ${member.accent}">${member.role}</span>
+            <span class="badge ${member.accent === 'member' ? 'member' : member.accent}">${member.status}</span>
+            <p>${member.note}</p>
+            <p>行为：${member.behavior}</p>
+            <p>工作区：${member.workspace}</p>
+          </article>
+        `).join('')}
       </div>
-      <nav class="nav">
-        <span class="navlink">Members</span>
-        <span class="navlink">Updates</span>
-        <span class="navlink">Reports</span>
-      </nav>
-    </header>
+    </aside>
+  `;
+}
 
-    <main class="layout">
-      <aside class="member-rail">
-        <h2>成员</h2>
-        <div class="member-list">${memberCards}</div>
-      </aside>
+function renderOwnerCard(currentRoom) {
+  return `
+    <div class="owner-card">
+      <div class="room-chip">OWNER CASE</div>
+      <h3>菲比</h3>
+      <p>${company.ownerTitle}</p>
+      <p>当前巡检：${currentRoom.name}</p>
+      <p>${currentRoom.tagline}</p>
+    </div>
+  `;
+}
 
-      <section class="stage">
-        <div class="stage-inner">
-          <div class="stage-header">
-            <h2>菲比的 Agent 公司空间</h2>
-            <p>当前案例以菲比为公司主人，用像素风 co-working 舞台表达 Agent 的存在感、工作状态和今日产出。</p>
+function renderScene() {
+  const currentRoom = getCurrentRoom();
+  const roomMembers = getMembersInRoom(currentRoom.id);
+  const selectedMember = getSelectedMember();
+  const decorations = roomDecorMap[currentRoom.id] || [];
+
+  return `
+    <section class="stage room-stage" data-room-theme="${currentRoom.theme}">
+      <div class="stage-inner">
+        <div class="stage-header">
+          <div class="room-header-meta">
+            <div class="room-chip">${currentRoom.name}</div>
+            <div class="room-chip">${roomMembers.length} 位成员</div>
+            <div class="room-chip">主色 ${currentRoom.theme}</div>
           </div>
+          <h2>▸ ${company.ownerName} 的 Agent 公司空间</h2>
+          <p>${roomCopy[currentRoom.id]}</p>
+        </div>
 
-          <div class="owner-zone">
-            <div class="owner-card">菲比<br/>Owner Case</div>
-            <div class="office-map">
-              <div class="desk"></div>
-              <div class="sofa"></div>
-              <div class="plant"></div>
-              <div class="agent-dot agent-a"></div>
-              <div class="agent-dot agent-b"></div>
-              <div class="agent-dot agent-c"></div>
-            </div>
-          </div>
-
-          <div class="stage-footer">
-            <p>主舞台优先表达：公司主人、办公室空间、少量活跃成员，以及公司正在运转的感觉。</p>
+        <div class="owner-zone">
+          ${renderOwnerCard(currentRoom)}
+          <div class="office-map" aria-label="${currentRoom.name} 场景">
+            ${decorations.map((item) => `<div class="${item.className}">${item.label}</div>`).join('')}
+            ${roomMembers.map((member, index) => `
+              <button
+                class="agent-dot"
+                type="button"
+                data-member-id="${member.id}"
+                data-slot="${slots[index % slots.length]}"
+                title="${member.name}"
+              >${member.name.slice(0, 1)}</button>
+            `).join('')}
           </div>
         </div>
-      </section>
 
-      <aside class="feed">
-        <h2>最近动态</h2>
-        <ul>${feedItems}</ul>
-      </aside>
-    </main>
+        <div class="stage-footer">
+          <p>当前焦点：${selectedMember.name} 正在 ${selectedMember.behavior}，工作区为 ${selectedMember.workspace}。</p>
+        </div>
+      </div>
+    </section>
+  `;
+}
 
-    <section class="summary">${summaryCards}</section>
-  </div>
-`;
+function renderPresencePanel() {
+  const currentRoom = getCurrentRoom();
+  const roomMembers = getMembersInRoom(currentRoom.id);
+  return `
+    <aside class="room-presence">
+      <h2>▸ ROOM STATUS</h2>
+      <p>${currentRoom.description}</p>
+      <div class="presence-list">
+        ${roomMembers.map((member) => `
+          <article class="presence-card">
+            <strong>${member.name}</strong>
+            <p>所在房间：${roomBadge(member.roomId)}</p>
+            <p>当前状态：${member.status}</p>
+            <p>当前行为：${member.behavior}</p>
+          </article>
+        `).join('')}
+      </div>
+    </aside>
+  `;
+}
+
+function renderFeed() {
+  return `
+    <aside class="feed">
+      <h2>▸ ROOM FEED</h2>
+      <ul>
+        ${feed.map((item) => `<li>${item}</li>`).join('')}
+        <li>${getCurrentRoom().name} 已载入，多房间切换状态已同步。</li>
+      </ul>
+    </aside>
+  `;
+}
+
+function renderSummary() {
+  return `
+    <section class="summary">
+      ${summaries.map((item) => `
+        <section class="summary-card">
+          <h3>${item.title}</h3>
+          <p>${item.body}</p>
+        </section>
+      `).join('')}
+    </section>
+  `;
+}
+
+function renderApp() {
+  ensureSelectedMember();
+  const currentRoom = getCurrentRoom();
+
+  document.querySelector('#app').innerHTML = `
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <h1>${company.name}</h1>
+          <p>${company.ownerName} · ${company.ownerTitle}</p>
+        </div>
+        <div class="meta">
+          <p>${company.timeLabel}</p>
+          <p>${company.onlineSummary}</p>
+        </div>
+        <nav class="nav">
+          <span class="navlink active">Rooms</span>
+          <span class="navlink">Status</span>
+          <span class="navlink">Reports</span>
+        </nav>
+      </header>
+
+      ${renderRoomTabs()}
+
+      <main class="layout">
+        ${renderMembersPanel()}
+        ${renderScene(currentRoom)}
+        <div class="side-column">
+          ${renderPresencePanel()}
+          ${renderFeed()}
+        </div>
+      </main>
+
+      ${renderSummary()}
+    </div>
+  `;
+
+  attachEvents();
+}
+
+function attachEvents() {
+  document.querySelectorAll('[data-room-id]').forEach((button) => {
+    button.addEventListener('click', () => switchRoom(button.dataset.roomId));
+  });
+
+  document.querySelectorAll('[data-member-id]').forEach((element) => {
+    element.addEventListener('click', () => {
+      state.selectedMemberId = element.dataset.memberId;
+      renderApp();
+    });
+  });
+}
+
+function switchRoom(roomId) {
+  if (!rooms.some((room) => room.id === roomId) || roomId === state.currentRoomId) {
+    return;
+  }
+
+  const stage = document.querySelector('.stage');
+  if (stage) {
+    stage.classList.add('is-transitioning');
+  }
+
+  roomState.previousRoomId = state.currentRoomId;
+  state.currentRoomId = roomId;
+  roomState.currentRoomId = roomId;
+  persistCurrentRoomId();
+
+  window.setTimeout(() => {
+    renderApp();
+    const newStage = document.querySelector('.stage');
+    if (newStage) {
+      newStage.classList.add('is-transitioning');
+      window.setTimeout(() => newStage.classList.remove('is-transitioning'), 320);
+    }
+  }, 120);
+}
+
+renderApp();
