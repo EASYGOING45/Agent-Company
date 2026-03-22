@@ -43,7 +43,7 @@ function createPixelAvatar({ background, panel, hair, skin, eye, jacket, accent,
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-const phoebeAvatar = '/public/assets/avatars/phoebe-avatar.png'.replace('/public', '');
+const phoebeAvatar = '/public/assets/avatars/phoebe-avatar.png';
 const phoebeAvatarFallback = createPixelAvatar({
   background: '#f6dbe9',
   panel: '#fff6d2',
