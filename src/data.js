@@ -1,3 +1,25 @@
+const phoebeAvatar =
+  'https://static.wikia.nocookie.net/wutheringwaves/images/b/b7/Resonator_Phoebe.png/revision/latest?cb=20250213085854&format=original';
+
+function createPixelAvatar({ background, outline, face, accent, detail }) {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">
+      <rect width="64" height="64" fill="${background}" />
+      <rect x="8" y="8" width="48" height="8" fill="${outline}" />
+      <rect x="8" y="16" width="8" height="32" fill="${outline}" />
+      <rect x="48" y="16" width="8" height="32" fill="${outline}" />
+      <rect x="16" y="16" width="32" height="8" fill="${accent}" />
+      <rect x="16" y="24" width="32" height="20" fill="${face}" />
+      <rect x="20" y="28" width="6" height="6" fill="${detail}" />
+      <rect x="38" y="28" width="6" height="6" fill="${detail}" />
+      <rect x="24" y="40" width="16" height="4" fill="${outline}" />
+      <rect x="20" y="48" width="24" height="8" fill="${accent}" />
+    </svg>
+  `;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 export const company = {
   name: 'Agent-Company',
   ownerName: '菲比',
@@ -66,6 +88,7 @@ export const members = [
   {
     id: 'phoebe',
     name: '菲比',
+    avatar: phoebeAvatar,
     role: '主人',
     roomId: 'lobby',
     behavior: '统筹中',
@@ -79,6 +102,13 @@ export const members = [
   {
     id: 'claude',
     name: 'Claude-Dev',
+    avatar: createPixelAvatar({
+      background: '#15233e',
+      outline: '#d8eefc',
+      face: '#88c6ff',
+      accent: '#406caa',
+      detail: '#0d1730',
+    }),
     role: '成员',
     roomId: 'meeting',
     behavior: '开会中',
@@ -92,6 +122,13 @@ export const members = [
   {
     id: 'gemini',
     name: 'Gemini-Research',
+    avatar: createPixelAvatar({
+      background: '#1f2f24',
+      outline: '#efffd7',
+      face: '#b4f58d',
+      accent: '#4f8c44',
+      detail: '#18301a',
+    }),
     role: '成员',
     roomId: 'lounge',
     behavior: '调研中',
@@ -105,6 +142,13 @@ export const members = [
   {
     id: 'codex',
     name: 'Codex-Builder',
+    avatar: createPixelAvatar({
+      background: '#221a39',
+      outline: '#f4ddff',
+      face: '#cc9cff',
+      accent: '#7149a7',
+      detail: '#120b23',
+    }),
     role: '成员',
     roomId: 'game',
     behavior: '实验中',
@@ -118,6 +162,13 @@ export const members = [
   {
     id: 'visitor',
     name: 'Visitor-01',
+    avatar: createPixelAvatar({
+      background: '#2d2f3c',
+      outline: '#f5f7ff',
+      face: '#d6deef',
+      accent: '#7f889e',
+      detail: '#1a1d27',
+    }),
     role: '访客',
     roomId: 'lobby',
     behavior: '参观中',

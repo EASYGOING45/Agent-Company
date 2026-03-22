@@ -169,6 +169,25 @@ body {
   gap: 10px;
 }
 
+.member-card-head,
+.presence-head,
+.focus-identity {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.member-card-copy {
+  min-width: 0;
+}
+
+.member-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
 .member-card,
 .presence-card {
   background: linear-gradient(180deg, var(--panel-soft) 0%, rgba(20, 27, 45, 0.98) 100%);
@@ -200,6 +219,31 @@ body {
 .badge.member { background: rgba(110, 196, 255, 0.18); color: var(--blue); }
 .badge.idle { background: rgba(196, 155, 255, 0.18); color: var(--purple); }
 .badge.guest { background: rgba(255, 255, 255, 0.1); color: var(--muted); }
+
+.member-avatar {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: block;
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    rgba(8, 11, 20, 0.88);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.2),
+    0 10px 18px rgba(0, 0, 0, 0.22);
+  object-fit: cover;
+  object-position: center top;
+  image-rendering: pixelated;
+}
+
+.owner-avatar,
+.focus-avatar {
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+}
 
 .stage {
   border-radius: 18px;
@@ -307,6 +351,7 @@ body {
   border: 3px solid rgba(255, 216, 102, 0.55);
   background: linear-gradient(180deg, rgba(255, 216, 102, 0.18), rgba(196, 155, 255, 0.14));
   display: grid;
+  gap: 10px;
   align-content: center;
   justify-items: center;
   text-align: center;
@@ -429,6 +474,7 @@ body {
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     inset 0 -48px 0 rgba(0, 0, 0, 0.12),
     0 0 26px var(--room-glow);
+  image-rendering: pixelated;
 }
 
 .office-map::before {
@@ -441,11 +487,53 @@ body {
   background:
     linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2)),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03) 18px, transparent 18px, transparent 36px);
+  z-index: 0;
+}
+
+.office-map::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.74;
+  z-index: 0;
+}
+
+.office-map[data-room-id='lobby']::after {
+  background:
+    linear-gradient(180deg, rgba(126, 208, 255, 0.3) 0 18%, transparent 18% 100%),
+    linear-gradient(90deg, transparent 0 18%, rgba(255, 255, 255, 0.08) 18% 21%, transparent 21% 79%, rgba(255, 255, 255, 0.08) 79% 82%, transparent 82% 100%),
+    repeating-linear-gradient(90deg, rgba(18, 33, 58, 0.85) 0 14px, rgba(26, 48, 83, 0.85) 14px 28px),
+    linear-gradient(180deg, rgba(7, 14, 28, 0) 0 65%, rgba(7, 14, 28, 0.65) 65% 100%);
+}
+
+.office-map[data-room-id='meeting']::after {
+  background:
+    linear-gradient(180deg, rgba(122, 255, 191, 0.2) 0 16%, transparent 16% 100%),
+    linear-gradient(90deg, transparent 0 18%, rgba(235, 255, 245, 0.18) 18% 80%, transparent 80% 100%),
+    repeating-linear-gradient(0deg, rgba(235, 255, 245, 0.06) 0 12px, transparent 12px 24px),
+    linear-gradient(180deg, transparent 0 60%, rgba(6, 16, 12, 0.45) 60% 100%);
+}
+
+.office-map[data-room-id='lounge']::after {
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 212, 150, 0.42) 0 20%, transparent 20% 42%),
+    linear-gradient(180deg, rgba(255, 177, 87, 0.18) 0 28%, rgba(81, 46, 29, 0.12) 28% 62%, rgba(39, 23, 15, 0.5) 62% 100%),
+    repeating-linear-gradient(90deg, rgba(255, 210, 164, 0.04) 0 12px, transparent 12px 24px);
+}
+
+.office-map[data-room-id='game']::after {
+  background:
+    linear-gradient(180deg, rgba(233, 136, 255, 0.16) 0 18%, transparent 18% 100%),
+    linear-gradient(90deg, rgba(255, 92, 179, 0.2) 0 18%, transparent 18% 82%, rgba(98, 203, 255, 0.18) 82% 100%),
+    repeating-linear-gradient(90deg, rgba(31, 18, 60, 0.62) 0 10px, rgba(54, 31, 102, 0.62) 10px 20px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 10px, transparent 10px 20px);
 }
 
 .office-el {
   position: absolute;
   border: 2px solid rgba(0, 0, 0, 0.24);
+  z-index: 1;
 }
 
 .pixel-window { width: 92px; height: 72px; top: 22px; left: 50%; transform: translateX(-50%); background: linear-gradient(180deg, #6ec4ff, #25496d); }
@@ -470,11 +558,14 @@ body {
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  padding: 0;
+  border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.28);
   box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.04);
   background: color-mix(in srgb, var(--room-base) 72%, #101728 28%);
   transition: transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+  overflow: hidden;
+  z-index: 1;
 }
 
 .agent-dot:hover {
@@ -493,6 +584,15 @@ body {
 .agent-dot[data-slot='c'] { right: 18%; bottom: 146px; }
 .agent-dot[data-slot='d'] { right: 28%; top: 138px; }
 
+.agent-dot-avatar {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
 .room-presence {
   display: grid;
   align-content: start;
@@ -504,6 +604,11 @@ body {
   display: block;
   margin-bottom: 8px;
   color: var(--text);
+}
+
+.presence-head p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .stage.is-transitioning .office-map,
@@ -578,5 +683,11 @@ body {
   .office-map {
     max-width: 100%;
     min-height: 280px;
+  }
+
+  .member-card-head,
+  .presence-head,
+  .focus-identity {
+    align-items: flex-start;
   }
 }

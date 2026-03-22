@@ -49,6 +49,10 @@ const state = {
   selectedMemberId: members[0]?.id ?? null,
 };
 
+function renderMemberAvatar(member, className = 'member-avatar') {
+  return `<img class="${className}" src="${member.avatar}" alt="${member.name} 头像" loading="lazy" decoding="async">`;
+}
+
 function loadCurrentRoomId() {
   const saved = localStorage.getItem(ROOM_STORAGE_KEY);
   if (rooms.some((room) => room.id === saved)) {
@@ -116,9 +120,16 @@ function renderMembersPanel() {
       <div class="member-list">
         ${visibleMembers.map((member) => `
           <article class="member-card ${member.id === state.selectedMemberId ? 'selected' : ''}" data-member-id="${member.id}">
-            <strong>${member.name}</strong>
-            <span class="badge ${member.accent}">${member.role}</span>
-            <span class="badge ${member.accent === 'member' ? 'member' : member.accent}">${member.status}</span>
+            <div class="member-card-head">
+              ${renderMemberAvatar(member)}
+              <div class="member-card-copy">
+                <strong>${member.name}</strong>
+                <div class="member-card-badges">
+                  <span class="badge ${member.accent}">${member.role}</span>
+                  <span class="badge ${member.accent === 'member' ? 'member' : member.accent}">${member.status}</span>
+                </div>
+              </div>
+            </div>
             <p>${member.note}</p>
             <p>所在房间：${roomBadge(member.roomId)}</p>
             <p>行为：${member.behavior}</p>
@@ -132,9 +143,11 @@ function renderMembersPanel() {
 }
 
 function renderOwnerCard(currentRoom) {
+  const owner = members.find((member) => member.id === 'phoebe') || members[0];
   return `
     <div class="owner-card">
       <div class="room-chip">OWNER CASE</div>
+      ${renderMemberAvatar(owner, 'member-avatar owner-avatar')}
       <h3>菲比</h3>
       <p>${company.ownerTitle}</p>
       <p>当前巡检：${currentRoom.name}</p>
@@ -147,9 +160,12 @@ function renderFocusPanel(selectedMember, currentRoom) {
   return `
     <section class="focus-panel">
       <div class="focus-header">
-        <div>
+        <div class="focus-identity">
+          ${renderMemberAvatar(selectedMember, 'member-avatar focus-avatar')}
+          <div>
           <p class="section-kicker">当前焦点成员</p>
           <h3>${selectedMember.name}</h3>
+          </div>
         </div>
         <div class="focus-badges">
           <span class="badge ${selectedMember.accent}">${selectedMember.role}</span>
@@ -207,7 +223,7 @@ function renderRoomVisual(currentRoom, roomMembers, decorations) {
         <h3>${currentRoom.name}</h3>
         <p>${roomCopy[currentRoom.id]}</p>
       </div>
-      <div class="office-map" aria-label="${currentRoom.name} 场景">
+      <div class="office-map" data-room-id="${currentRoom.id}" aria-label="${currentRoom.name} 场景">
         ${decorations.map((item) => `<div class="${item.className}">${item.label}</div>`).join('')}
         ${roomMembers.map((member, index) => `
           <button
@@ -216,7 +232,9 @@ function renderRoomVisual(currentRoom, roomMembers, decorations) {
             data-member-id="${member.id}"
             data-slot="${slots[index % slots.length]}"
             title="${member.name}"
-          >${member.name.slice(0, 1)}</button>
+          >
+            ${renderMemberAvatar(member, 'member-avatar agent-dot-avatar')}
+          </button>
         `).join('')}
       </div>
     </aside>
@@ -270,7 +288,13 @@ function renderPresencePanel() {
       <div class="presence-list">
         ${roomMembers.map((member) => `
           <article class="presence-card">
-            <strong>${member.name}</strong>
+            <div class="presence-head">
+              ${renderMemberAvatar(member, 'member-avatar presence-avatar')}
+              <div>
+                <strong>${member.name}</strong>
+                <p>${member.note}</p>
+              </div>
+            </div>
             <p>所在房间：${roomBadge(member.roomId)}</p>
             <p>当前状态：${member.status}</p>
             <p>当前行为：${member.behavior}</p>
