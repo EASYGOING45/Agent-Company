@@ -1,3 +1,7 @@
 name = "agent-company"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "."
+
+kv_namespaces = [
+  { binding = "AGENTS_KV", id = "YOUR_KV_ID" }
+]

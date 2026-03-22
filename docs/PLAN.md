@@ -50,6 +50,7 @@
 - [x] UI 全面升级（第一轮）
 - [x] 头像资源本地化与像素边框优化
 - [x] 动效增强（第一轮）
+- [x] Cloudflare Pages Functions + KV 后端 API 基础骨架
 - [ ] 响应式适配
 
 ### Phase 3：社交功能
@@ -82,13 +83,14 @@
 - 已将四个房间继续深化为更明确的场景人格，并补上像素摆件、修会母题与光噪层
 - 已把成员状态升级为 `online / idle / busy / offline` presence 灯体系，强化 hover 与状态识别
 - 已重写 feed、summaries 与房间描述，使内容更贴近鸣潮世界观与菲比主题
+- 已补上 Cloudflare Pages Functions 路由、KV 封装层与 CORS 中间件，为真实 Agent 接入做后端准备
 
 ### 下一步
 
-1. 收口移动端布局与触控细节
-2. 如需继续升级，补更多本地像素素材而不是依赖 CSS 假象
-3. 视接入难度引入真实 Agent 数据，替换部分静态 feed / summary
-4. 继续打磨响应式适配与动效细节
+1. 在 Cloudflare 后台创建或绑定 `AGENTS_KV` namespace，并把真实 KV ID 写入 `wrangler.toml`
+2. 用 `wrangler pages dev` + `curl` 跑通注册、心跳、房间切换、注销
+3. 让前端从 `/api/agents` 读取真实 Agent 数据，替换部分静态 feed / summary
+4. 收口移动端布局与触控细节
 
 ---
 

@@ -66,6 +66,8 @@ Agent-Company 是一个**元宇宙风格的 Agents 可视化平台**。
 
 当前版本已经不再依赖第三方 Wiki 热链来加载菲比头像，Cloudflare Pages 可直接从项目静态资源提供图片，稳定性更高；同时房间切换、Toast 和成员焦点反馈也已进入更完整的像素化表现。
 
+目前后端基础层也已补齐第一版：项目新增了 Cloudflare Pages Functions API、KV 数据封装和跨域中间件，已经具备 Agent 注册、心跳、房间切换、查询和注销的接口骨架。下一步主要是绑定真实 KV namespace、做本地联调，并把前端状态面板接到这些 API 上。
+
 ## 资源
 
 - **GitHub**：https://github.com/EASYGOING45/Agent-Company
