@@ -1,8 +1,8 @@
 import { company, rooms, members, roomState, feed, summaries } from './data.js';
 
 const ROOM_STORAGE_KEY = 'agent-company-current-room';
-const ROOM_TRANSITION_MS = 280;
-const TOAST_MS = 2200;
+const ROOM_TRANSITION_MS = 420;
+const TOAST_MS = 2600;
 
 const roomDecorMap = {
   lobby: [
@@ -14,6 +14,9 @@ const roomDecorMap = {
     { className: 'pixel-sofa office-el', label: '' },
     { className: 'pixel-plant office-el', label: '' },
     { className: 'pixel-terminal office-el', label: '' },
+    { className: 'pixel-halo-gate office-el', label: '' },
+    { className: 'pixel-prism office-el', label: '' },
+    { className: 'pixel-banner office-el', label: '' },
   ],
   meeting: [
     { className: 'pixel-screen office-el', label: '' },
@@ -22,6 +25,10 @@ const roomDecorMap = {
     { className: 'pixel-desk office-el', label: '' },
     { className: 'pixel-plant office-el', label: '' },
     { className: 'pixel-signal-post office-el', label: '' },
+    { className: 'pixel-prism-dais office-el', label: '' },
+    { className: 'pixel-column office-el pixel-column-left', label: '' },
+    { className: 'pixel-column office-el pixel-column-right', label: '' },
+    { className: 'pixel-terminal office-el pixel-analysis-terminal', label: '' },
   ],
   lounge: [
     { className: 'pixel-window office-el', label: '' },
@@ -30,6 +37,9 @@ const roomDecorMap = {
     { className: 'pixel-sign office-el', label: 'REST ARC' },
     { className: 'pixel-plant office-el', label: '' },
     { className: 'pixel-lamp office-el', label: '' },
+    { className: 'pixel-altar office-el', label: '' },
+    { className: 'pixel-vinyl office-el', label: '' },
+    { className: 'pixel-cushion office-el', label: '' },
   ],
   game: [
     { className: 'pixel-sign office-el', label: 'PLAY LAB' },
@@ -38,14 +48,24 @@ const roomDecorMap = {
     { className: 'pixel-speaker office-el', label: '' },
     { className: 'pixel-beanbag office-el', label: '' },
     { className: 'pixel-prize office-el', label: '' },
+    { className: 'pixel-prism-crane office-el', label: '' },
+    { className: 'pixel-laser-grid office-el', label: '' },
+    { className: 'pixel-mini-cabinet office-el', label: '' },
   ],
 };
 
 const roomCopy = {
-  lobby: '主厅像一块持续亮着的接待屏，把主人巡检、访客进出与公司整体营业状态压进同一片潮蓝色光带。',
-  meeting: '会议室收束光线与注意力，桌面、白板和屏幕一起承担讨论的节拍，适合让想法快速落地。',
-  lounge: '休息室让节奏往下沉半拍，落日窗景、暖灯和软装把“恢复”变成这间事务所的一部分。',
-  game: '游戏室负责把高频能量释放出来，彩色机台与音箱让实验、娱乐和团队活性共存。',
+  lobby: '主厅被菲比调成了隐海修会前庭的样子，前台棱镜、halo 门廊与潮蓝色脉冲一起承担来访接待与总览巡检。',
+  meeting: '会议室像一个被压低亮度的共振校准舱，议程圣像、长桌和分析终端会把讨论导向更明确的决策。',
+  lounge: '休息室把“恢复”做成了一间可停留的房，暖色壁龛、留声角和低频光噪会让灵感慢慢重新浮起来。',
+  game: '游戏室不只是娱乐角，而是高频实验场，跃迁机台、霓虹吊臂和跳频灯带让释放压力也带着创造感。',
+};
+
+const roomPulseCopy = {
+  lobby: '前台脉冲稳定 · halo 与棱镜同步',
+  meeting: '议程脉冲收束 · 白板与长桌对齐',
+  lounge: '低频回响缓慢铺开 · 暖灯处于舒缓档位',
+  game: '高频信号跃迁中 · 机台与音箱进入热机状态',
 };
 
 const slots = ['a', 'b', 'c', 'd'];
@@ -54,6 +74,7 @@ const state = {
   currentRoomId: loadCurrentRoomId(),
   selectedMemberId: members[0]?.id ?? null,
   toast: null,
+  transitionTick: 0,
 };
 
 let roomTimer = null;
@@ -114,10 +135,11 @@ function ensureSelectedMember() {
 }
 
 function getStatusSummary() {
-  const working = members.filter((member) => member.status === '工作中' || member.status === '编码中').length;
-  const researching = members.filter((member) => member.status === '调研中').length;
+  const online = members.filter((member) => member.presence === 'online' || member.presence === 'busy').length;
+  const busy = members.filter((member) => member.presence === 'busy').length;
+  const idle = members.filter((member) => member.presence === 'idle').length;
 
-  return `${members.length} 位在线 · ${working} 位推进中 · ${researching} 位整理灵感`;
+  return `${online} 位在线 · ${busy} 位高频推进 · ${idle} 位低频整理`;
 }
 
 function formatDashboardTime() {
@@ -146,6 +168,27 @@ function showToast(kind, title, body) {
   }, TOAST_MS);
 }
 
+function getPresenceMeta(member) {
+  const map = {
+    online: { label: member.presenceLabel || 'online', className: 'status-online' },
+    busy: { label: member.presenceLabel || 'busy', className: 'status-busy' },
+    idle: { label: member.presenceLabel || 'idle', className: 'status-idle' },
+    offline: { label: member.presenceLabel || 'offline', className: 'status-offline' },
+  };
+
+  return map[member.presence] || map.online;
+}
+
+function renderPresenceBadge(member) {
+  const meta = getPresenceMeta(member);
+  return `
+    <span class="presence-pill ${meta.className}">
+      <span class="presence-light"></span>
+      ${meta.label}
+    </span>
+  `;
+}
+
 function renderToast() {
   if (!state.toast) {
     return '';
@@ -155,7 +198,8 @@ function renderToast() {
     <aside class="toast-stack" aria-live="polite" aria-atomic="true">
       <article class="toast-card toast-${state.toast.kind}">
         <div class="toast-ping"></div>
-        <div>
+        <div class="toast-copy">
+          <p class="toast-kicker">signal update</p>
           <p class="toast-title">${state.toast.title}</p>
           <p class="toast-body">${state.toast.body}</p>
         </div>
@@ -202,6 +246,7 @@ function renderMembersPanel() {
                 <div class="member-card-badges">
                   <span class="badge ${member.accent}">${member.role}</span>
                   <span class="badge ${member.accent === 'member' ? 'member' : member.accent}">${member.status}</span>
+                  ${renderPresenceBadge(member)}
                 </div>
               </div>
             </div>
@@ -227,6 +272,7 @@ function renderOwnerCard(currentRoom) {
       <p>${company.ownerTitle}</p>
       <p>当前巡检：${currentRoom.name}</p>
       <p>${currentRoom.tagline}</p>
+      ${renderPresenceBadge(owner)}
     </div>
   `;
 }
@@ -245,6 +291,7 @@ function renderFocusPanel(selectedMember, currentRoom) {
         <div class="focus-badges">
           <span class="badge ${selectedMember.accent}">${selectedMember.role}</span>
           <span class="badge ${selectedMember.accent === 'member' ? 'member' : selectedMember.accent}">${selectedMember.status}</span>
+          ${renderPresenceBadge(selectedMember)}
         </div>
       </div>
       <p class="focus-note">${selectedMember.note}</p>
@@ -282,8 +329,8 @@ function renderFocusPanel(selectedMember, currentRoom) {
           <strong>${getMembersInRoom(currentRoom.id).length} 位</strong>
         </article>
         <article class="info-card">
-          <span>场景标签</span>
-          <strong>${currentRoom.tagline}</strong>
+          <span>房间母题</span>
+          <strong>${currentRoom.motif}</strong>
         </article>
         <article class="info-card">
           <span>房间信号</span>
@@ -295,6 +342,7 @@ function renderFocusPanel(selectedMember, currentRoom) {
 }
 
 function renderSignalStrip(currentRoom, roomMembers) {
+  const busyCount = roomMembers.filter((member) => member.presence === 'busy').length;
   return `
     <section class="signal-strip">
       <article class="signal-card">
@@ -306,8 +354,8 @@ function renderSignalStrip(currentRoom, roomMembers) {
         <strong>${currentRoom.ambience}</strong>
       </article>
       <article class="signal-card">
-        <span>在线成员</span>
-        <strong>${roomMembers.length} / ${members.length}</strong>
+        <span>高频成员</span>
+        <strong>${busyCount} / ${roomMembers.length}</strong>
       </article>
       <article class="signal-card">
         <span>当前焦点</span>
@@ -328,7 +376,14 @@ function renderRoomVisual(currentRoom, roomMembers, decorations) {
       <div class="room-decor-tags">
         ${currentRoom.decor.map((item) => `<span>${item}</span>`).join('')}
       </div>
+      <div class="room-pulse-panel">
+        <span class="section-kicker">pulse log</span>
+        <strong>${currentRoom.motif}</strong>
+        <p>${roomPulseCopy[currentRoom.id]}</p>
+      </div>
       <div class="office-map" data-room-id="${currentRoom.id}" aria-label="${currentRoom.name} 场景">
+        <div class="office-noise office-noise-a"></div>
+        <div class="office-noise office-noise-b"></div>
         <div class="office-ambience office-ambience-a"></div>
         <div class="office-ambience office-ambience-b"></div>
         <div class="office-stars"></div>
@@ -340,8 +395,10 @@ function renderRoomVisual(currentRoom, roomMembers, decorations) {
             data-member-id="${member.id}"
             data-slot="${slots[index % slots.length]}"
             title="${member.name}"
+            aria-label="聚焦 ${member.name}"
           >
             ${renderMemberAvatar(member, 'member-avatar agent-dot-avatar')}
+            <span class="agent-dot-ring"></span>
           </button>
         `).join('')}
       </div>
@@ -362,7 +419,7 @@ function renderScene() {
           <div class="room-header-meta">
             <div class="room-chip">${currentRoom.name}</div>
             <div class="room-chip">${roomMembers.length} 位成员</div>
-            <div class="room-chip">主色 ${currentRoom.theme}</div>
+            <div class="room-chip">${currentRoom.motif}</div>
           </div>
           <h2>▸ ${company.ownerName} 的共鸣事务所</h2>
           <p>${roomCopy[currentRoom.id]}</p>
@@ -381,7 +438,7 @@ function renderScene() {
         </div>
 
         <div class="stage-footer">
-          <p>当前焦点：${selectedMember.name} 正在 ${selectedMember.behavior}，工作区为 ${selectedMember.workspace}。</p>
+          <p>当前焦点：${selectedMember.name} 正在 ${selectedMember.behavior}，工作区为 ${selectedMember.workspace}，房间母题为 ${currentRoom.motif}。</p>
         </div>
       </div>
     </section>
@@ -405,8 +462,11 @@ function renderPresencePanel() {
                 <p>${member.note}</p>
               </div>
             </div>
+            <div class="presence-meta">
+              ${renderPresenceBadge(member)}
+              <span class="badge ${member.accent === 'member' ? 'member' : member.accent}">${member.status}</span>
+            </div>
             <p>所在房间：${roomBadge(member.roomId)}</p>
-            <p>当前状态：${member.status}</p>
             <p>当前行为：${member.behavior}</p>
             <p>状态时长：${member.duration}</p>
           </article>
@@ -423,7 +483,7 @@ function renderFeed() {
       <h2>▸ ROOM FEED</h2>
       <ul>
         ${feed.map((item) => `<li>${item}</li>`).join('')}
-        <li>${currentRoom.name} 已接入 ${currentRoom.signal}，当前环境为 ${currentRoom.ambience}。</li>
+        <li>${currentRoom.name} 当前进入 ${currentRoom.ambience}，房间母题为 ${currentRoom.motif}，主信号是 ${currentRoom.signal}。</li>
       </ul>
     </aside>
   `;
@@ -447,7 +507,7 @@ function renderApp() {
   const currentRoom = getCurrentRoom();
 
   document.querySelector('#app').innerHTML = `
-    <div class="app" data-room-theme="${currentRoom.theme}">
+    <div class="app" data-room-theme="${currentRoom.theme}" data-transition-tick="${state.transitionTick}">
       <header class="topbar">
         <div class="brand">
           <p class="brand-kicker">鸣潮像素事务所</p>
@@ -532,6 +592,7 @@ function switchRoom(roomId) {
   window.clearTimeout(roomTimer);
   roomState.previousRoomId = state.currentRoomId;
   state.currentRoomId = roomId;
+  state.transitionTick += 1;
   roomState.currentRoomId = roomId;
   persistCurrentRoomId();
 
@@ -545,7 +606,7 @@ function switchRoom(roomId) {
       newStage.classList.add('is-transitioning');
       window.setTimeout(() => newStage.classList.remove('is-transitioning'), ROOM_TRANSITION_MS);
     }
-  }, 120);
+  }, 140);
 }
 
 renderApp();
