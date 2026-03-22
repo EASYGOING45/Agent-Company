@@ -50,7 +50,12 @@ const state = {
 };
 
 function renderMemberAvatar(member, className = 'member-avatar') {
-  return `<img class="${className}" src="${member.avatar}" alt="${member.name} 头像" loading="lazy" decoding="async">`;
+  const fallbackSrc = member.avatarFallback ? ` data-fallback-src="${member.avatarFallback}"` : '';
+  return `
+    <span class="avatar-shell ${className}-shell avatar-shell-${member.accent}">
+      <img class="${className}" src="${member.avatar}" alt="${member.name} 头像" loading="lazy" decoding="async"${fallbackSrc}>
+    </span>
+  `;
 }
 
 function loadCurrentRoomId() {
@@ -382,6 +387,26 @@ function attachEvents() {
       renderApp();
     });
   });
+
+  hydrateAvatarFallbacks();
+}
+
+function hydrateAvatarFallbacks() {
+  document.querySelectorAll('img[data-fallback-src]').forEach((img) => {
+    img.addEventListener('error', handleAvatarError, { once: true });
+  });
+}
+
+function handleAvatarError(event) {
+  const img = event.currentTarget;
+  const fallbackSrc = img.dataset.fallbackSrc;
+
+  if (!fallbackSrc || img.dataset.fallbackApplied === 'true') {
+    return;
+  }
+
+  img.dataset.fallbackApplied = 'true';
+  img.src = fallbackSrc;
 }
 
 function switchRoom(roomId) {

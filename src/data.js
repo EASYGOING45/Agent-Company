@@ -1,6 +1,3 @@
-const phoebeAvatar =
-  'https://static.wikia.nocookie.net/wutheringwaves/images/b/b7/Resonator_Phoebe.png/revision/latest?cb=20250213085854&format=original';
-
 function createPixelAvatar({ background, outline, face, accent, detail }) {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">
@@ -19,6 +16,16 @@ function createPixelAvatar({ background, outline, face, accent, detail }) {
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+
+// Localized under public/assets to avoid third-party hotlink/CORS failures in production.
+const phoebeAvatar = '/assets/avatars/phoebe-avatar.png';
+const phoebeAvatarFallback = createPixelAvatar({
+  background: '#f5e1ef',
+  outline: '#fff7d6',
+  face: '#ffd7ea',
+  accent: '#f6c95c',
+  detail: '#8f4d8d',
+});
 
 export const company = {
   name: 'Agent-Company',
@@ -89,6 +96,7 @@ export const members = [
     id: 'phoebe',
     name: '菲比',
     avatar: phoebeAvatar,
+    avatarFallback: phoebeAvatarFallback,
     role: '主人',
     roomId: 'lobby',
     behavior: '统筹中',
