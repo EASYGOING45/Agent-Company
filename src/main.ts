@@ -1,0 +1,533 @@
+/**
+ * 鸣潮元宇宙 - 主入口
+ */
+
+import { Renderer } from './canvas/Renderer.ts';
+import { Scene } from './scene/Scene.ts';
+import { Citizen, CitizenLayer, type AgentState } from './citizens/Citizen.ts';
+import { SpriteSheet } from './sprites/SpriteSheet.ts';
+import { ParticleSystem } from './effects/Particles.ts';
+import { SpeechBubbleSystem } from './effects/SpeechBubble.ts';
+import { Signal, type AgentStatus } from './signal/Signal.ts';
+import {
+  INITIAL_CITIZENS,
+  ROOM_ORDER,
+  createWorldDefinition,
+  type RoomId,
+} from './world/WuWaWorld.ts';
+import type { SpriteSheetConfig } from './sprites/types.ts';
+
+const WORLD = createWorldDefinition();
+const SPRITE_CONFIGS: Record<string, SpriteSheetConfig> = {
+  phoebe: createWuWaSpriteConfig('#f3c56b', '#fff1c8', '#35220e'),
+  claude: createWuWaSpriteConfig('#67d4ff', '#d9f5ff', '#0c2840'),
+  gemini: createWuWaSpriteConfig('#7fe9c1', '#ecfff7', '#0f2f23'),
+  codex: createWuWaSpriteConfig('#a696ff', '#efe9ff', '#24184d'),
+};
+
+type CitizenAgentSnapshot = AgentStatus & { agent: string };
+
+class WuWaVerse {
+  private renderer: Renderer;
+  private scene: Scene;
+  private citizens: Citizen[] = [];
+  private citizenLayer = new CitizenLayer();
+  private particles = new ParticleSystem();
+  private speechBubbles = new SpeechBubbleSystem();
+  private signal: Signal;
+  private particleTimers = new Map<string, number>();
+  private idleTimers = new Map<string, number>();
+  private agents = new Map<string, CitizenAgentSnapshot>();
+  private activeRoom: RoomId = 'lobby';
+  private selectedCitizen: Citizen | null = null;
+
+  constructor(private container: HTMLElement, wsUrl: string) {
+    this.renderer = new Renderer(container, 512, 384, 2);
+    this.scene = new Scene(WORLD[this.activeRoom].scene);
+    this.signal = new Signal({ url: wsUrl });
+
+    this.renderer.addLayer(this.scene);
+    this.renderer.addLayer({
+      order: 1,
+      render: (_ctx, delta) => {
+        this.updateCitizens(delta);
+      },
+    });
+    this.renderer.addLayer(this.citizenLayer);
+    this.renderer.addLayer(this.particles);
+    this.renderer.addLayer(this.speechBubbles);
+
+    this.renderer.canvas.addEventListener('click', (event) => this.handleClick(event));
+    this.signal.onUpdate((agents) => this.handleSignalUpdate(agents as CitizenAgentSnapshot[]));
+    wireRoomButtons((room) => void this.switchRoom(room));
+  }
+
+  async start() {
+    await this.scene.load();
+
+    for (const config of INITIAL_CITIZENS) {
+      const spriteConfig = SPRITE_CONFIGS[config.sprite];
+      if (!spriteConfig) continue;
+
+      const sheet = new SpriteSheet(spriteConfig);
+      await sheet.load();
+
+      const citizen = new Citizen(config, sheet, this.scene.config.tileWidth, this.scene.config.tileHeight);
+      const initialRoom = inferRoomFromLocation(config.position);
+      citizen.setRoom(initialRoom);
+      const initialScene = WORLD[initialRoom].scene;
+      const location = initialScene.locations[config.position];
+      if (location) {
+        citizen.setTilePosition(location.x, location.y);
+      }
+      this.citizens.push(citizen);
+      this.agents.set(config.agentId, {
+        id: config.agentId,
+        agent: config.agentId,
+        name: config.name,
+        state: 'idle',
+        task: '待命中',
+        energy: 1,
+        color: config.color,
+        room: initialRoom,
+        role: config.role,
+      });
+    }
+
+    this.citizenLayer.setCitizens(this.citizens);
+    this.refreshRoomUi();
+    this.refreshAgentUi();
+    this.signal.start();
+    this.renderer.start();
+  }
+
+  stop() {
+    this.renderer.stop();
+    this.signal.stop();
+  }
+
+  private updateCitizens(delta: number) {
+    const blockedByCitizen = new Map<string, string>();
+    for (const citizen of this.citizens.filter((entry) => entry.visible && entry.room === this.activeRoom)) {
+      for (const reserved of citizen.getReservedTiles()) {
+        blockedByCitizen.set(reserved, citizen.agentId);
+      }
+    }
+
+    for (const citizen of this.citizens) {
+      citizen.visible = citizen.state !== 'offline' && citizen.room === this.activeRoom;
+      this.routeCitizen(citizen, delta, blockedByCitizen);
+      const blockedTiles = new Set<string>();
+      for (const [tile, owner] of blockedByCitizen) {
+        if (owner !== citizen.agentId) blockedTiles.add(tile);
+      }
+      citizen.update(delta, this.scene.pathfinder, { blockedTiles });
+      this.updateCitizenEffects(citizen, delta);
+    }
+  }
+
+  private routeCitizen(citizen: Citizen, delta: number, blockedByCitizen: Map<string, string>) {
+    const snapshot = this.agents.get(citizen.agentId);
+    const room = this.resolveDesiredRoom(citizen, snapshot);
+    if (room !== citizen.room) {
+      citizen.setRoom(room);
+      citizen.clearTarget();
+    }
+
+    if (citizen.room !== this.activeRoom) {
+      return;
+    }
+
+    if (!citizen.isMoving()) {
+      const targetLocation = this.chooseTargetLocation(citizen, snapshot);
+      if (targetLocation && targetLocation !== citizen.currentTargetLocation) {
+        this.moveCitizenToLocation(citizen, targetLocation, blockedByCitizen);
+      }
+    }
+
+    if (citizen.state === 'idle' && !citizen.isMoving()) {
+      const timer = (this.idleTimers.get(citizen.agentId) ?? 0) + delta;
+      const nextDelay = 2.5 + ((hashString(citizen.agentId) % 7) * 0.25);
+      if (timer >= nextDelay) {
+        this.idleTimers.set(citizen.agentId, 0);
+        const wander = pickFromArray(WORLD[this.activeRoom].wanderZones, citizen.agentId, Math.floor(performance.now() / 1000));
+        if (wander) {
+          this.moveCitizenToLocation(citizen, wander, blockedByCitizen);
+        }
+      } else {
+        this.idleTimers.set(citizen.agentId, timer);
+      }
+    } else {
+      this.idleTimers.set(citizen.agentId, 0);
+    }
+  }
+
+  private moveCitizenToLocation(citizen: Citizen, locationKey: string, blockedByCitizen: Map<string, string>) {
+    const location = this.scene.getLocation(locationKey);
+    if (!location) return;
+
+    const { x: startX, y: startY } = citizen.getTilePosition();
+    const path = this.scene.pathfinder.findPath(startX, startY, location.x, location.y);
+    if (path.length <= 1) return;
+
+    const destinationKey = `${location.x},${location.y}`;
+    const occupiedBy = blockedByCitizen.get(destinationKey);
+    if (occupiedBy && occupiedBy !== citizen.agentId) {
+      return;
+    }
+
+    citizen.walkTo(path, locationKey);
+  }
+
+  private handleSignalUpdate(agents: CitizenAgentSnapshot[]) {
+    for (const agent of agents) {
+      this.agents.set(agent.agent, agent);
+      const citizen = this.citizens.find((entry) => entry.agentId === agent.agent);
+      if (!citizen) continue;
+
+      const prevState = citizen.state;
+      citizen.updateState(normalizeState(agent.state), agent.task, agent.energy, agent.room);
+
+      if (prevState !== citizen.state) {
+        if (citizen.state === 'working' && agent.task) {
+          this.speechBubbles.show(citizen.x + 16, citizen.y, agent.task, 4);
+        } else if (citizen.state === 'speaking' && agent.task) {
+          this.speechBubbles.show(citizen.x + 16, citizen.y, agent.task, 5);
+        } else if (citizen.state === 'error') {
+          this.particles.emitExclamation(citizen.x + 16, citizen.y);
+        }
+      }
+    }
+
+    this.refreshAgentUi();
+    this.refreshSelectedCitizen();
+  }
+
+  private updateCitizenEffects(citizen: Citizen, delta: number) {
+    if (citizen.room !== this.activeRoom) return;
+
+    const timer = (this.particleTimers.get(citizen.agentId) ?? 0) + delta;
+    this.particleTimers.set(citizen.agentId, timer);
+
+    if (timer > 0.18) {
+      this.particleTimers.set(citizen.agentId, 0);
+      this.particles.emitNoise(citizen.x + 16, citizen.y + 14, citizen.color);
+      if (citizen.state === 'sleeping') {
+        this.particles.emitZzz(citizen.x + 16, citizen.y);
+      } else if (citizen.state === 'thinking') {
+        this.particles.emitThought(citizen.x + 16, citizen.y);
+      } else if (citizen.state === 'error') {
+        this.particles.emitExclamation(citizen.x + 16, citizen.y);
+      }
+    }
+  }
+
+  private handleClick(event: MouseEvent) {
+    const world = this.renderer.screenToWorld(event.clientX, event.clientY);
+    const target = [...this.citizens]
+      .filter((citizen) => citizen.visible && citizen.containsPoint(world.x, world.y))
+      .sort((a, b) => b.y - a.y)[0];
+
+    if (!target) return;
+    this.selectedCitizen = target;
+    this.refreshSelectedCitizen();
+    const snapshot = this.agents.get(target.agentId);
+    const status = snapshot?.task ? `${target.name}: ${snapshot.task}` : `${target.name}: ${target.state}`;
+    this.speechBubbles.show(target.x + 16, target.y, status, 3);
+  }
+
+  private async switchRoom(room: RoomId) {
+    if (room === this.activeRoom) return;
+    this.activeRoom = room;
+    await this.scene.setConfig(WORLD[room].scene);
+    this.refreshRoomUi();
+    this.refreshAgentUi();
+    this.refreshSelectedCitizen();
+  }
+
+  private resolveDesiredRoom(citizen: Citizen, snapshot?: CitizenAgentSnapshot): RoomId {
+    if (snapshot?.room && snapshot.room in WORLD) {
+      return snapshot.room as RoomId;
+    }
+    if (citizen.state === 'sleeping' || citizen.state === 'offline') return 'lounge';
+    if (citizen.state === 'thinking' || citizen.state === 'speaking' || citizen.state === 'error') return 'meeting';
+    if (citizen.agentId === 'codex') return 'training';
+    if (citizen.agentId === 'gemini') return 'meeting';
+    return 'lobby';
+  }
+
+  private chooseTargetLocation(citizen: Citizen, snapshot?: CitizenAgentSnapshot): string | null {
+    const room = WORLD[this.activeRoom];
+    if (citizen.room !== room.id) return null;
+    const candidates = room.stateTargets[citizen.state] ?? room.wanderZones;
+    const seed = `${citizen.agentId}:${snapshot?.task ?? citizen.task ?? citizen.state}`;
+    return pickFromArray(candidates, seed, 0) ?? null;
+  }
+
+  private refreshRoomUi() {
+    const room = WORLD[this.activeRoom];
+    document.body.dataset.room = room.id;
+    const roomName = document.getElementById('room-name');
+    const stageName = document.getElementById('room-name-stage');
+    const roomTagline = document.getElementById('room-tagline');
+    if (roomName) roomName.textContent = room.name;
+    if (stageName) stageName.textContent = room.name;
+    if (roomTagline) roomTagline.textContent = room.tagline;
+
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-room-switch]')) {
+      button.classList.toggle('active', button.dataset.roomSwitch === room.id);
+    }
+  }
+
+  private refreshAgentUi() {
+    const onlineCount = document.getElementById('online-count');
+    const activeAgents = [...this.agents.values()].filter((agent) => normalizeState(agent.state) !== 'offline');
+    if (onlineCount) onlineCount.textContent = String(activeAgents.length);
+
+    const info = document.getElementById('agents-info');
+    if (info) {
+      const list = this.citizens
+        .filter((citizen) => citizen.room === this.activeRoom)
+        .map((citizen) => {
+          const agent = this.agents.get(citizen.agentId);
+          const task = agent?.task ?? citizen.task ?? '待命中';
+          return `${citizen.name} · ${labelState(citizen.state)} · ${task}`;
+        });
+      info.textContent = list.length > 0 ? list.join('\n') : '当前房间暂无活跃共鸣者。';
+    }
+  }
+
+  private refreshSelectedCitizen() {
+    const panel = document.getElementById('citizen-card');
+    const title = document.getElementById('citizen-name');
+    const meta = document.getElementById('citizen-meta');
+    const task = document.getElementById('citizen-task');
+    const energy = document.getElementById('citizen-energy');
+    const room = document.getElementById('citizen-room');
+    if (!panel || !title || !meta || !task || !energy || !room) return;
+
+    const selected = this.selectedCitizen;
+    if (!selected) {
+      panel.classList.add('is-empty');
+      title.textContent = '选择共鸣者';
+      meta.textContent = '点击画布中的角色查看详情';
+      task.textContent = '--';
+      energy.textContent = '--';
+      room.textContent = WORLD[this.activeRoom].name;
+      return;
+    }
+
+    const snapshot = this.agents.get(selected.agentId);
+    panel.classList.remove('is-empty');
+    title.textContent = selected.name;
+    meta.textContent = `${selected.role} · ${labelState(selected.state)}`;
+    task.textContent = snapshot?.task ?? selected.task ?? '待命中';
+    energy.textContent = `${Math.round((snapshot?.energy ?? selected.energy) * 100)}%`;
+    room.textContent = WORLD[selected.room as RoomId]?.name ?? selected.room;
+  }
+}
+
+function normalizeState(value: string | undefined): AgentState {
+  switch (value) {
+    case 'working':
+    case 'idle':
+    case 'thinking':
+    case 'sleeping':
+    case 'speaking':
+    case 'error':
+    case 'offline':
+      return value;
+    default:
+      return 'idle';
+  }
+}
+
+function labelState(state: AgentState): string {
+  return {
+    working: '执行中',
+    idle: '待命',
+    thinking: '思考中',
+    sleeping: '休眠',
+    speaking: '同步中',
+    error: '异常',
+    offline: '离线',
+  }[state];
+}
+
+function inferRoomFromLocation(location: string): RoomId {
+  if (location.startsWith('meeting_')) return 'meeting';
+  if (location.startsWith('lounge_')) return 'lounge';
+  if (location.startsWith('training_')) return 'training';
+  return 'lobby';
+}
+
+function pickFromArray<T>(items: T[], seed: string, offset: number): T | undefined {
+  if (items.length === 0) return undefined;
+  const index = Math.abs(hashString(`${seed}:${offset}`)) % items.length;
+  return items[index];
+}
+
+function hashString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
+function wireRoomButtons(onSwitch: (room: RoomId) => void) {
+  for (const room of ROOM_ORDER) {
+    const button = document.querySelector<HTMLButtonElement>(`[data-room-switch="${room}"]`);
+    button?.addEventListener('click', () => onSwitch(room));
+  }
+}
+
+function createWuWaSpriteConfig(primary: string, secondary: string, shadow: string): SpriteSheetConfig {
+  return {
+    sheets: {
+      walk: createWuWaSpriteSheet(primary, secondary, shadow, 'walk'),
+      actions: createWuWaSpriteSheet(primary, secondary, shadow, 'actions'),
+    },
+    animations: {
+      idle_down: { sheet: 'actions', row: 0, frames: 4, speed: 0.22 },
+      idle_up: { sheet: 'actions', row: 1, frames: 4, speed: 0.22 },
+      idle_left: { sheet: 'actions', row: 2, frames: 4, speed: 0.22 },
+      idle_right: { sheet: 'actions', row: 3, frames: 4, speed: 0.22 },
+      working: { sheet: 'actions', row: 4, frames: 4, speed: 0.16 },
+      sleeping: { sheet: 'actions', row: 5, frames: 4, speed: 0.36 },
+      talking: { sheet: 'actions', row: 6, frames: 4, speed: 0.14 },
+      walk_down: { sheet: 'walk', row: 0, frames: 4, speed: 0.12 },
+      walk_up: { sheet: 'walk', row: 1, frames: 4, speed: 0.12 },
+      walk_left: { sheet: 'walk', row: 2, frames: 4, speed: 0.12 },
+      walk_right: { sheet: 'walk', row: 3, frames: 4, speed: 0.12 },
+    },
+    frameWidth: 32,
+    frameHeight: 48,
+  };
+}
+
+function createWuWaSpriteSheet(primary: string, secondary: string, shadow: string, type: 'walk' | 'actions') {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = type === 'walk' ? 192 : 336;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+
+  for (let row = 0; row < canvas.height / 48; row += 1) {
+    for (let frame = 0; frame < 4; frame += 1) {
+      drawFrame(ctx, frame * 32, row * 48, primary, secondary, shadow, row, frame, type);
+    }
+  }
+
+  return canvas.toDataURL();
+}
+
+function drawFrame(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  primary: string,
+  secondary: string,
+  shadow: string,
+  row: number,
+  frame: number,
+  type: 'walk' | 'actions'
+) {
+  const bob = type === 'walk' ? Math.sin((frame / 4) * Math.PI * 2) * 1.5 : Math.sin(((frame + row) / 4) * Math.PI * 2) * 0.6;
+  const sway = type === 'walk' ? (frame % 2 === 0 ? -1.5 : 1.5) : 0;
+  const faceLeft = row === 2;
+  const faceRight = row === 3;
+  const faceUp = row === 1;
+
+  ctx.save();
+  ctx.translate(x, y + bob);
+
+  const cape = ctx.createLinearGradient(8, 18, 24, 42);
+  cape.addColorStop(0, `${primary}dd`);
+  cape.addColorStop(1, `${shadow}ee`);
+  ctx.fillStyle = cape;
+  ctx.beginPath();
+  ctx.moveTo(10, 16);
+  ctx.lineTo(22, 16);
+  ctx.lineTo(25 + sway * 0.3, 40);
+  ctx.lineTo(7 + sway * 0.3, 40);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = secondary;
+  ctx.beginPath();
+  ctx.ellipse(16, 11, 7, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = primary;
+  ctx.fillRect(11, 18, 10, 14);
+  ctx.fillStyle = `${primary}bb`;
+  ctx.fillRect(12, 16, 8, 3);
+
+  ctx.fillStyle = shadow;
+  ctx.fillRect(11 + sway * 0.2, 31, 4, 10);
+  ctx.fillRect(17 - sway * 0.2, 31, 4, 10);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(16, 18);
+  ctx.lineTo(16, 30);
+  ctx.stroke();
+
+  if (!faceUp) {
+    ctx.fillStyle = '#0d152b';
+    if (faceLeft) {
+      ctx.fillRect(11, 10, 2, 2);
+    } else if (faceRight) {
+      ctx.fillRect(19, 10, 2, 2);
+    } else {
+      ctx.fillRect(12, 10, 2, 2);
+      ctx.fillRect(18, 10, 2, 2);
+    }
+  }
+
+  if (type === 'actions') {
+    if (row === 4) {
+      ctx.fillStyle = 'rgba(100, 213, 255, 0.45)';
+      ctx.fillRect(4 + frame, 6, 8, 3);
+      ctx.fillRect(20 - frame, 8, 6, 2);
+    } else if (row === 5) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.fillRect(8, 37, 16, 4);
+    } else if (row === 6) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.beginPath();
+      ctx.arc(16, 6, 4 + (frame % 2), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+async function init() {
+  const app = document.getElementById('app');
+  if (!app) {
+    throw new Error('找不到 #app 容器');
+  }
+
+  const loading = document.getElementById('loading');
+  if (loading) loading.remove();
+
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsHost = window.location.port === '5173'
+    ? `${window.location.hostname}:4321`
+    : window.location.host;
+  const wsUrl = `${wsProtocol}//${wsHost}`;
+  const wuwa = new WuWaVerse(app, wsUrl);
+  await wuwa.start();
+
+  window.addEventListener('beforeunload', () => {
+    wuwa.stop();
+  });
+}
+
+init().catch((error) => {
+  console.error('[WuWaVerse] 启动失败', error);
+});

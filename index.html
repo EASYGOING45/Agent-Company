@@ -1,16 +1,381 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent-Company 元宇宙 2.0</title>
+  <title>鸣潮元宇宙 - 隐海修会基地</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./src/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-0: #050816;
+      --bg-1: #0b1226;
+      --bg-2: #101a35;
+      --line: rgba(115, 190, 255, 0.18);
+      --text: #eaf3ff;
+      --muted: rgba(234, 243, 255, 0.6);
+      --accent: #64d5ff;
+      --accent-soft: rgba(100, 213, 255, 0.22);
+      --accent-gold: #f3c56b;
+    }
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Noto Sans SC", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(100, 213, 255, 0.14), transparent 32%),
+        radial-gradient(circle at 80% 20%, rgba(243, 197, 107, 0.12), transparent 24%),
+        linear-gradient(180deg, #040713 0%, #070d1c 42%, #040814 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(180deg, rgba(110, 210, 255, 0.04) 0, rgba(110, 210, 255, 0.04) 1px, transparent 1px, transparent 3px),
+        linear-gradient(90deg, rgba(255,255,255,0.02), transparent 20%, transparent 80%, rgba(255,255,255,0.02));
+      mix-blend-mode: screen;
+      opacity: 0.55;
+      z-index: 10;
+    }
+    body[data-room="meeting"] { --accent: #87f0c7; --accent-soft: rgba(135, 240, 199, 0.22); }
+    body[data-room="lounge"] { --accent: #ffb27a; --accent-soft: rgba(255, 178, 122, 0.22); }
+    body[data-room="training"] { --accent: #9f8cff; --accent-soft: rgba(159, 140, 255, 0.22); }
+    header, main, footer { position: relative; z-index: 1; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1rem;
+      padding: 1.5rem 2rem 0;
+    }
+    .brand h1 {
+      font-family: "Orbitron", sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-shadow: 0 0 22px var(--accent-soft);
+    }
+    .brand p {
+      margin-top: 0.45rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .metrics {
+      display: flex;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .metric {
+      min-width: 130px;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(12, 18, 38, 0.86), rgba(9, 15, 29, 0.72));
+      backdrop-filter: blur(14px);
+    }
+    .metric-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 0.3rem;
+      color: var(--accent);
+      font-family: "Orbitron", sans-serif;
+      font-size: 1.05rem;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 820px) 320px;
+      gap: 1.25rem;
+      align-items: start;
+      width: min(1200px, calc(100vw - 2rem));
+      margin: 1.5rem auto 0;
+      padding-bottom: 2rem;
+    }
+    .stage, .sidebar-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(13, 20, 40, 0.88), rgba(8, 13, 24, 0.82));
+      box-shadow: 0 30px 80px rgba(1, 6, 18, 0.42);
+      backdrop-filter: blur(18px);
+    }
+    .stage {
+      padding: 1rem;
+    }
+    .stage-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .stage-title h2 {
+      font-size: 1.3rem;
+      color: var(--accent-gold);
+      margin-bottom: 0.25rem;
+    }
+    .stage-title p {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .room-switches {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .room-btn, .control-btn {
+      border: 1px solid var(--line);
+      background: rgba(11, 18, 38, 0.9);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      transition: 160ms ease;
+      font: inherit;
+    }
+    .room-btn:hover, .control-btn:hover, .room-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft), 0 0 24px var(--accent-soft);
+      transform: translateY(-1px);
+    }
+    #canvas-shell {
+      position: relative;
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      padding: 0.75rem;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(13, 20, 40, 0.9), rgba(8, 12, 22, 0.92)),
+        radial-gradient(circle at top, var(--accent-soft), transparent 45%);
+      overflow: hidden;
+    }
+    #canvas-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.28);
+    }
+    #app {
+      position: relative;
+      z-index: 1;
+    }
+    .loading {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 0.7rem;
+      color: var(--muted);
+    }
+    .loading h2 {
+      font-family: "Orbitron", sans-serif;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .control-btn[data-tone="gold"] { color: var(--accent-gold); border-color: rgba(243, 197, 107, 0.25); }
+    .sidebar {
+      display: grid;
+      gap: 1rem;
+    }
+    .sidebar-card {
+      padding: 1rem 1.1rem;
+    }
+    .sidebar-card h3 {
+      margin-bottom: 0.8rem;
+      font-size: 1rem;
+      color: var(--accent-gold);
+    }
+    .sidebar-card p, #agents-info, .detail-list div {
+      color: var(--muted);
+      line-height: 1.65;
+      white-space: pre-line;
+      font-size: 0.92rem;
+    }
+    #citizen-card.is-empty .detail-value {
+      color: var(--muted);
+    }
+    .detail-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.8rem;
+    }
+    .detail-label {
+      color: rgba(234, 243, 255, 0.45);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .detail-value {
+      color: var(--text);
+      margin-top: 0.16rem;
+    }
+    footer {
+      padding: 0 2rem 1.4rem;
+      color: rgba(234, 243, 255, 0.38);
+      font-size: 0.82rem;
+      text-align: center;
+    }
+    @media (max-width: 980px) {
+      header { flex-direction: column; align-items: stretch; }
+      .metrics { justify-content: flex-start; }
+      main { grid-template-columns: 1fr; width: min(900px, calc(100vw - 1rem)); }
+    }
+  </style>
 </head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="./src/main.js"></script>
+<body data-room="lobby">
+  <header>
+    <div class="brand">
+      <h1>鸣潮元宇宙</h1>
+      <p>隐海修会基地 · Agent 心跳实时映射空间</p>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric-label">在线共鸣者</span>
+        <strong id="online-count">0</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">当前房间</span>
+        <strong id="room-name">主厅</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">基地时间</span>
+        <strong id="current-time">--:--</strong>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div class="stage-top">
+        <div class="stage-title">
+          <h2 id="room-name-stage">隐海修会基地</h2>
+          <p id="room-tagline">潮声前台，接收今日回响</p>
+        </div>
+        <div class="room-switches">
+          <button class="room-btn active" data-room-switch="lobby">主厅</button>
+          <button class="room-btn" data-room-switch="meeting">共鸣室</button>
+          <button class="room-btn" data-room-switch="lounge">休息室</button>
+          <button class="room-btn" data-room-switch="training">训练场</button>
+        </div>
+      </div>
+
+      <div id="canvas-shell">
+        <div id="app"></div>
+        <div class="loading" id="loading">
+          <div>
+            <h2>连接共鸣网络</h2>
+            <p>Canvas 场景与心跳流正在同步…</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="control-btn" data-tone="gold" onclick="setPhoebeState('working')">菲比 · 工作</button>
+        <button class="control-btn" onclick="setPhoebeState('thinking')">菲比 · 思考</button>
+        <button class="control-btn" onclick="setPhoebeState('idle')">菲比 · 待机</button>
+        <button class="control-btn" onclick="setPhoebeState('sleeping')">菲比 · 休眠</button>
+        <button class="control-btn" onclick="sendHeartbeat()">发送心跳</button>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="sidebar-card">
+        <h3>房间态势</h3>
+        <p id="agents-info">正在获取共鸣者信息…</p>
+      </section>
+      <section class="sidebar-card is-empty" id="citizen-card">
+        <h3 id="citizen-name">选择共鸣者</h3>
+        <p id="citizen-meta">点击画布中的角色查看详情</p>
+        <div class="detail-list">
+          <div>
+            <div class="detail-label">当前任务</div>
+            <div class="detail-value" id="citizen-task">--</div>
+          </div>
+          <div>
+            <div class="detail-label">能量</div>
+            <div class="detail-value" id="citizen-energy">--</div>
+          </div>
+          <div>
+            <div class="detail-label">所在房间</div>
+            <div class="detail-value" id="citizen-room">主厅</div>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer>Node.js + WebSocket 后端驱动 · Canvas API 渲染 · 鸣潮深夜蓝黑 / 衍射蓝 / 菲比金主题</footer>
+
+  <script type="module">
+    import './src/main.ts';
+
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('current-time').textContent =
+        now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
+
+  <script>
+    window.setPhoebeState = function(state) {
+      fetch('/api/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent: 'phoebe',
+          name: '菲比',
+          state,
+          task: ({
+            working: '统筹基地任务与调度',
+            thinking: '分析今日共鸣回路',
+            idle: '巡查基地状态',
+            sleeping: '进入恢复静默'
+          })[state] || '状态同步',
+          color: '#f3c56b',
+          role: 'owner'
+        })
+      }).catch(console.error);
+    };
+
+    window.sendHeartbeat = function() {
+      fetch('/api/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent: 'phoebe',
+          name: '菲比',
+          state: 'working',
+          task: '校验元宇宙心跳链路',
+          color: '#f3c56b',
+          role: 'owner'
+        })
+      }).catch(console.error);
+    };
+  </script>
 </body>
 </html>
