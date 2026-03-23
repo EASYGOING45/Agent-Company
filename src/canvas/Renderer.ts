@@ -153,6 +153,7 @@ export class Renderer {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#040816';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    this.drawAmbientBackdrop(ctx, canvas.width, canvas.height);
 
     this.camera.update();
     this.camera.apply(ctx);
@@ -165,6 +166,20 @@ export class Renderer {
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.drawCrtOverlay(ctx, canvas.width, canvas.height);
+  }
+
+  private drawAmbientBackdrop(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    const topGlow = ctx.createRadialGradient(width * 0.18, height * 0.08, 12, width * 0.18, height * 0.08, width * 0.42);
+    topGlow.addColorStop(0, 'rgba(255, 210, 128, 0.08)');
+    topGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = topGlow;
+    ctx.fillRect(0, 0, width, height);
+
+    const sideGlow = ctx.createRadialGradient(width * 0.82, height * 0.22, 12, width * 0.82, height * 0.22, width * 0.36);
+    sideGlow.addColorStop(0, 'rgba(108, 210, 255, 0.08)');
+    sideGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = sideGlow;
+    ctx.fillRect(0, 0, width, height);
   }
 
   private drawCrtOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
@@ -182,6 +197,14 @@ export class Renderer {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
+
+    const frameGlow = ctx.createLinearGradient(0, 0, width, height);
+    frameGlow.addColorStop(0, 'rgba(243, 197, 107, 0.16)');
+    frameGlow.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
+    frameGlow.addColorStop(1, 'rgba(100, 213, 255, 0.16)');
+    ctx.strokeStyle = frameGlow;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(1.5, 1.5, width - 3, height - 3);
     ctx.restore();
   }
 }

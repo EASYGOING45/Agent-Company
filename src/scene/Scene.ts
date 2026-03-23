@@ -219,6 +219,8 @@ export class Scene implements RenderLayer {
     ctx.closePath();
     ctx.fillStyle = 'rgba(27, 21, 31, 0.96)';
     ctx.fill();
+    drawWallGlow(ctx, roomBack.x - projection.tileWidth * 2.8, roomBack.y - projection.elevation * 0.9, tintForTheme(this.config.theme));
+    drawWallGlow(ctx, roomBack.x + projection.tileWidth * 2.8, roomBack.y - projection.elevation * 0.9, tintForTheme(this.config.theme));
     ctx.restore();
   }
 
@@ -246,6 +248,19 @@ export class Scene implements RenderLayer {
       ctx.lineTo(projection.originX + 30 + i * 42, projection.originY + 150);
       ctx.stroke();
     }
+
+    const pool = ctx.createRadialGradient(
+      projection.originX,
+      projection.originY + projection.tileHeight * 7.5,
+      12,
+      projection.originX,
+      projection.originY + projection.tileHeight * 7.5,
+      projection.tileWidth * 4.5
+    );
+    pool.addColorStop(0, `${tint}1f`);
+    pool.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = pool;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.restore();
   }
 
@@ -350,14 +365,20 @@ export class Scene implements RenderLayer {
     ctx.fill();
     ctx.strokeStyle = `${tint}88`;
     ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 240, 222, 0.16)';
+    ctx.fillRect(x - 12, y - projection.elevation * 0.84, 4, 16);
+    ctx.fillRect(x + 8, y - projection.elevation * 0.84, 4, 16);
     ctx.restore();
   }
 
   private drawPropShadow(ctx: CanvasRenderingContext2D, x: number, y: number, projection: IsometricProjection) {
     ctx.save();
-    ctx.fillStyle = 'rgba(5, 2, 6, 0.32)';
+    const gradient = ctx.createRadialGradient(x + 4, y + projection.tileHeight * 0.84, 2, x + 4, y + projection.tileHeight * 0.84, projection.tileWidth * 0.3);
+    gradient.addColorStop(0, 'rgba(5, 2, 6, 0.36)');
+    gradient.addColorStop(1, 'rgba(5, 2, 6, 0)');
+    ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.ellipse(x, y + projection.tileHeight * 0.8, projection.tileWidth * 0.22, projection.tileHeight * 0.18, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 4, y + projection.tileHeight * 0.84, projection.tileWidth * 0.28, projection.tileHeight * 0.2, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -379,16 +400,39 @@ export class Scene implements RenderLayer {
       case 'console':
       case 'table':
       case 'bar':
-        drawIsoBox(ctx, x, top, halfW - 5, 10, 18, key === 'bar' ? ['#7e5b3b', '#5b3f27', '#906845'] : ['#394d72', '#26354d', '#4a638f']);
+      case 'monitor':
+        drawIsoBox(ctx, x, top, halfW - 5, 10, 18, key === 'bar' ? ['#7e5b3b', '#5b3f27', '#906845'] : key === 'table' ? ['#7f6546', '#5c4631', '#9a7b58'] : ['#394d72', '#26354d', '#4a638f']);
         if (key !== 'bar') {
           ctx.fillStyle = `${tint}66`;
           ctx.fillRect(x - 10, top + 8, 20, 2);
+        }
+        if (key === 'monitor' || key === 'console') {
+          ctx.fillStyle = '#0f1c32';
+          ctx.fillRect(x - 8, top - 5, 16, 9);
+          ctx.strokeStyle = `${tint}99`;
+          ctx.strokeRect(x - 8.5, top - 5.5, 17, 10);
+          ctx.fillStyle = `${tint}44`;
+          ctx.fillRect(x - 6, top - 3, 12, 3);
         }
         break;
       case 'chair':
       case 'bench':
       case 'couch':
         drawIsoBox(ctx, x, top + 6, halfW - 10, 8, key === 'couch' ? 14 : 10, key === 'couch' ? ['#9a6a57', '#68473a', '#b67d67'] : ['#566c8f', '#364760', '#6f86ab']);
+        break;
+      case 'rug':
+        ctx.fillStyle = '#7d4f54';
+        ctx.beginPath();
+        ctx.moveTo(x, y + 1);
+        ctx.lineTo(x + halfW - 5, y + projection.tileHeight / 2);
+        ctx.lineTo(x, y + projection.tileHeight - 2);
+        ctx.lineTo(x - halfW + 5, y + projection.tileHeight / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 227, 188, 0.35)';
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 240, 220, 0.22)';
+        ctx.fillRect(x - 6, y + projection.tileHeight / 2 - 1, 12, 2);
         break;
       case 'bookshelf':
       case 'archive':
@@ -404,6 +448,14 @@ export class Scene implements RenderLayer {
       case 'board':
       case 'holo':
         drawBoard(ctx, x, y - 18, key === 'holo' ? tint : '#f3c56b');
+        break;
+      case 'papers':
+        ctx.fillStyle = 'rgba(255, 246, 232, 0.92)';
+        ctx.fillRect(x - 8, y + 4, 8, 4);
+        ctx.fillRect(x - 1, y + 2, 7, 4);
+        ctx.fillStyle = 'rgba(214, 194, 162, 0.9)';
+        ctx.fillRect(x - 7, y + 5, 5, 1);
+        ctx.fillRect(x, y + 3, 4, 1);
         break;
       case 'divider':
       case 'pillar':
@@ -544,6 +596,13 @@ function floorPalette(key: string, tint: string) {
       highlight: 'rgba(255, 247, 231, 0.14)',
     };
   }
+  if (key.includes('blue')) {
+    return {
+      base: '#43536b',
+      line: 'rgba(188, 223, 255, 0.2)',
+      highlight: 'rgba(231, 245, 255, 0.12)',
+    };
+  }
   return {
     base: '#4f5872',
     line: `${tint}44`,
@@ -566,14 +625,23 @@ function drawFloorPattern(
     ctx.lineTo(x + 8, y + projection.tileHeight * 0.85);
     ctx.moveTo(x - 13, y + projection.tileHeight * 0.35);
     ctx.lineTo(x + 3, y + projection.tileHeight * 0.68);
+    ctx.moveTo(x - 2, y + projection.tileHeight * 0.28);
+    ctx.lineTo(x + 12, y + projection.tileHeight * 0.56);
   } else if (key.includes('ring') || key.includes('resonance')) {
     ctx.ellipse(x, y + projection.tileHeight / 2, 8, 4, 0, 0, Math.PI * 2);
+    ctx.moveTo(x - 10, y + projection.tileHeight / 2);
+    ctx.lineTo(x + 10, y + projection.tileHeight / 2);
   } else if (key.includes('tile')) {
     ctx.moveTo(x, y + 4);
     ctx.lineTo(x + 10, y + projection.tileHeight / 2);
     ctx.lineTo(x, y + projection.tileHeight - 4);
     ctx.lineTo(x - 10, y + projection.tileHeight / 2);
     ctx.closePath();
+  } else if (key.includes('blue') || key.includes('grid')) {
+    ctx.moveTo(x - 8, y + projection.tileHeight * 0.38);
+    ctx.lineTo(x + 8, y + projection.tileHeight * 0.38);
+    ctx.moveTo(x - 8, y + projection.tileHeight * 0.68);
+    ctx.lineTo(x + 8, y + projection.tileHeight * 0.68);
   } else {
     ctx.moveTo(x - 10, y + projection.tileHeight / 2);
     ctx.lineTo(x + 10, y + projection.tileHeight / 2);
@@ -625,4 +693,16 @@ function cropBackdrop(image: HTMLImageElement, targetWidth: number, targetHeight
     sw,
     sh,
   };
+}
+
+function tintForTheme(theme: SceneConfig['theme']) {
+  return THEME_TINT[theme ?? 'blue'];
+}
+
+function drawWallGlow(ctx: CanvasRenderingContext2D, x: number, y: number, tint: string) {
+  const glow = ctx.createRadialGradient(x, y, 2, x, y, 42);
+  glow.addColorStop(0, `${tint}2d`);
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - 48, y - 48, 96, 96);
 }

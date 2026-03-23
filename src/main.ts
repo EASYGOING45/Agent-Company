@@ -19,21 +19,30 @@ import {
 import type { SpriteSheetConfig } from './sprites/types.ts';
 
 const WORLD = createWorldDefinition();
-const SPRITE_PALETTES: Record<string, [string, string, string]> = {
-  phoebe: ['#f3c56b', '#fff1c8', '#35220e'],
-  jinxi: ['#7fe4d6', '#ecfffb', '#10342c'],
-  changli: ['#ff9f72', '#ffe7d6', '#4a1f11'],
-  jiyan: ['#87f0c7', '#edfff7', '#143126'],
-  xiangliyao: ['#7fc2ff', '#eaf6ff', '#132740'],
-  colletta: ['#b79cff', '#f3ecff', '#261a46'],
-  roccia: ['#ffb4d8', '#fff0f7', '#4a1e31'],
-  zani: ['#ffd07a', '#fff5da', '#493113'],
-  brant: ['#72c3ff', '#e5f6ff', '#13314a'],
+interface SpriteProfile {
+  body: string;
+  hair: string;
+  shadow: string;
+  accent: string;
+  trim: string;
+  silhouette: 'halo' | 'longHair' | 'cloak' | 'armor' | 'coat' | 'dress' | 'twinTail' | 'cape' | 'scarf';
+}
+
+const SPRITE_PROFILES: Record<string, SpriteProfile> = {
+  phoebe: { body: '#f3c56b', hair: '#fff1c8', shadow: '#35220e', accent: '#ffe28d', trim: '#7c5316', silhouette: 'halo' },
+  jinxi: { body: '#7fe4d6', hair: '#ecfffb', shadow: '#10342c', accent: '#b9fff6', trim: '#2d6f63', silhouette: 'longHair' },
+  changli: { body: '#ff9f72', hair: '#ffe7d6', shadow: '#4a1f11', accent: '#ffd08f', trim: '#973d23', silhouette: 'cloak' },
+  jiyan: { body: '#87f0c7', hair: '#edfff7', shadow: '#143126', accent: '#b5ffd7', trim: '#2f7459', silhouette: 'armor' },
+  xiangliyao: { body: '#7fc2ff', hair: '#eaf6ff', shadow: '#132740', accent: '#b4dcff', trim: '#3568a1', silhouette: 'coat' },
+  colletta: { body: '#b79cff', hair: '#f3ecff', shadow: '#261a46', accent: '#e6d6ff', trim: '#6a52a8', silhouette: 'dress' },
+  roccia: { body: '#ffb4d8', hair: '#fff0f7', shadow: '#4a1e31', accent: '#ffd4ea', trim: '#ab507b', silhouette: 'twinTail' },
+  zani: { body: '#ffd07a', hair: '#fff5da', shadow: '#493113', accent: '#ffe7aa', trim: '#9f6b22', silhouette: 'cape' },
+  brant: { body: '#72c3ff', hair: '#e5f6ff', shadow: '#13314a', accent: '#9fe4ff', trim: '#2c6d93', silhouette: 'scarf' },
 };
 const SPRITE_CONFIGS = Object.fromEntries(
-  Object.entries(SPRITE_PALETTES).map(([sprite, [primary, secondary, shadow]]) => [
+  Object.entries(SPRITE_PROFILES).map(([sprite, profile]) => [
     sprite,
-    createWuWaSpriteConfig(primary, secondary, shadow),
+    createWuWaSpriteConfig(profile),
   ])
 ) as Record<string, SpriteSheetConfig>;
 
@@ -260,6 +269,8 @@ class WuWaVerse {
       .sort((a, b) => b.y - a.y)[0];
 
     if (!target) return;
+    for (const citizen of this.citizens) citizen.setSelected(false);
+    target.setSelected(true);
     this.selectedCitizen = target;
     this.refreshSelectedCitizen();
     const snapshot = this.agents.get(target.agentId);
@@ -272,6 +283,9 @@ class WuWaVerse {
     if (region === this.activeRegion) return;
     this.activeRegion = region;
     await this.scene.setConfig(WORLD[region].scene);
+    for (const citizen of this.citizens) {
+      citizen.setSelected(citizen === this.selectedCitizen && citizen.room === region);
+    }
     this.refreshRegionUi();
     this.refreshAgentUi();
     this.refreshSelectedCitizen();
@@ -367,6 +381,7 @@ class WuWaVerse {
     }
 
     const snapshot = this.agents.get(selected.agentId);
+    for (const citizen of this.citizens) citizen.setSelected(citizen === selected && citizen.room === this.activeRegion);
     panel.classList.remove('is-empty');
     title.textContent = selected.name;
     meta.textContent = `${snapshot?.faction ?? selected.role} · ${labelState(selected.state)}`;
@@ -433,11 +448,11 @@ function wireRegionButtons(onSwitch: (region: RegionId) => void) {
   }
 }
 
-function createWuWaSpriteConfig(primary: string, secondary: string, shadow: string): SpriteSheetConfig {
+function createWuWaSpriteConfig(profile: SpriteProfile): SpriteSheetConfig {
   return {
     sheets: {
-      walk: createWuWaSpriteSheet(primary, secondary, shadow, 'walk'),
-      actions: createWuWaSpriteSheet(primary, secondary, shadow, 'actions'),
+      walk: createWuWaSpriteSheet(profile, 'walk'),
+      actions: createWuWaSpriteSheet(profile, 'actions'),
     },
     animations: {
       idle_down: { sheet: 'actions', row: 0, frames: 4, speed: 0.22 },
@@ -459,7 +474,7 @@ function createWuWaSpriteConfig(primary: string, secondary: string, shadow: stri
   };
 }
 
-function createWuWaSpriteSheet(primary: string, secondary: string, shadow: string, type: 'walk' | 'actions') {
+function createWuWaSpriteSheet(profile: SpriteProfile, type: 'walk' | 'actions') {
   const canvas = document.createElement('canvas');
   canvas.width = 96;
   canvas.height = type === 'walk' ? 96 : 168;
@@ -469,7 +484,7 @@ function createWuWaSpriteSheet(primary: string, secondary: string, shadow: strin
 
   for (let row = 0; row < canvas.height / 24; row += 1) {
     for (let frame = 0; frame < 4; frame += 1) {
-      drawFrame(ctx, frame * 24, row * 24, primary, secondary, shadow, row, frame, type);
+      drawFrame(ctx, frame * 24, row * 24, profile, row, frame, type);
     }
   }
 
@@ -480,13 +495,12 @@ function drawFrame(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  primary: string,
-  secondary: string,
-  shadow: string,
+  profile: SpriteProfile,
   row: number,
   frame: number,
   type: 'walk' | 'actions'
 ) {
+  const { body, hair, shadow, accent, trim, silhouette } = profile;
   const bob = type === 'walk' ? (frame % 2 === 0 ? 0 : 1) : row === 5 ? 1 : 0;
   const sway = type === 'walk' ? (frame % 2 === 0 ? -1 : 1) : 0;
   const faceLeft = row === 2;
@@ -503,19 +517,32 @@ function drawFrame(
   ctx.fillStyle = shadow;
   ctx.fillRect(9, 17, 2, 4);
   ctx.fillRect(13, 17 + legOffset, 2, 4 - legOffset);
+  ctx.fillRect(8, 20, 8, 1);
 
-  ctx.fillStyle = primary;
+  if (silhouette === 'cape' || silhouette === 'cloak' || silhouette === 'dress') {
+    ctx.fillRect(7 + sway, 15, 10, 4);
+  }
+
+  if (silhouette === 'longHair' || silhouette === 'twinTail' || silhouette === 'scarf') {
+    ctx.fillRect(8, 8, 1, 8);
+    ctx.fillRect(15, 8, 1, 8);
+  }
+
+  ctx.fillStyle = body;
   ctx.fillRect(8 + sway, 10, 8, 8);
   ctx.fillRect(7 + sway - armShift, 11, 2, 5);
   ctx.fillRect(16 + sway + armShift, 11, 2, 5);
-  ctx.fillStyle = `${primary}99`;
-  ctx.fillRect(9 + sway, 9, 6, 1);
+  ctx.fillStyle = trim;
+  ctx.fillRect(9 + sway, 10, 6, 1);
+  ctx.fillRect(10 + sway, 15, 4, 2);
 
-  ctx.fillStyle = secondary;
+  ctx.fillStyle = hair;
   ctx.fillRect(9, 5, 6, 5);
   ctx.fillRect(10, 4, 4, 1);
   ctx.fillStyle = '#f7efe5';
   ctx.fillRect(11, 7, 2, 1);
+
+  drawSilhouetteDetail(ctx, silhouette, accent, trim, shadow, frame, sway, row, type);
 
   if (faceUp) {
     ctx.fillStyle = shadow;
@@ -529,7 +556,7 @@ function drawFrame(
   }
 
   if (type === 'actions' && row === 4) {
-    ctx.fillStyle = hexAlpha(primary, 0.45);
+    ctx.fillStyle = hexAlpha(accent, 0.45);
     ctx.fillRect(7, 9, 10, 1);
     ctx.fillRect(6 + frame, 18, 12 - frame, 1);
   } else if (type === 'actions' && row === 5 && frame % 2 === 0) {
@@ -541,6 +568,79 @@ function drawFrame(
   }
 
   ctx.restore();
+}
+
+function drawSilhouetteDetail(
+  ctx: CanvasRenderingContext2D,
+  silhouette: SpriteProfile['silhouette'],
+  accent: string,
+  trim: string,
+  shadow: string,
+  frame: number,
+  sway: number,
+  row: number,
+  type: 'walk' | 'actions'
+) {
+  switch (silhouette) {
+    case 'halo':
+      ctx.fillStyle = accent;
+      ctx.fillRect(10, 2, 4, 1);
+      if (type === 'actions' && row === 4) ctx.fillRect(9, 2, 6, 1);
+      break;
+    case 'longHair':
+      ctx.fillStyle = trim;
+      ctx.fillRect(8, 9, 1, 7);
+      ctx.fillRect(15, 9, 1, 7);
+      ctx.fillStyle = accent;
+      ctx.fillRect(12, 3, 1, 1);
+      break;
+    case 'cloak':
+      ctx.fillStyle = trim;
+      ctx.fillRect(7 + sway, 12, 2, 6);
+      ctx.fillRect(15 + sway, 12, 2, 6);
+      ctx.fillStyle = accent;
+      ctx.fillRect(9 + sway, 11, 6, 1);
+      break;
+    case 'armor':
+      ctx.fillStyle = trim;
+      ctx.fillRect(7 + sway, 11, 3, 2);
+      ctx.fillRect(14 + sway, 11, 3, 2);
+      ctx.fillStyle = accent;
+      ctx.fillRect(11 + sway, 12, 2, 4);
+      break;
+    case 'coat':
+      ctx.fillStyle = trim;
+      ctx.fillRect(8 + sway, 14, 8, 4);
+      ctx.fillStyle = accent;
+      ctx.fillRect(11 + sway, 10, 2, 8);
+      break;
+    case 'dress':
+      ctx.fillStyle = trim;
+      ctx.fillRect(7 + sway, 15, 10, 3);
+      ctx.fillStyle = accent;
+      ctx.fillRect(9 + sway, 11, 6, 1);
+      break;
+    case 'twinTail':
+      ctx.fillStyle = trim;
+      ctx.fillRect(7, 8, 1, 5);
+      ctx.fillRect(16, 8, 1, 5);
+      ctx.fillStyle = accent;
+      ctx.fillRect(9, 4, 1, 1);
+      ctx.fillRect(14, 4, 1, 1);
+      break;
+    case 'cape':
+      ctx.fillStyle = trim;
+      ctx.fillRect(7 + sway, 12, 10, 6);
+      ctx.fillStyle = accent;
+      ctx.fillRect(8 + sway, 11, 8, 1);
+      break;
+    case 'scarf':
+      ctx.fillStyle = accent;
+      ctx.fillRect(8 + sway, 11, 8, 2);
+      ctx.fillStyle = shadow;
+      ctx.fillRect(7 + sway + (frame % 2), 13, 2, 4);
+      break;
+  }
 }
 
 function hexAlpha(hex: string, alpha: number) {

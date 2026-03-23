@@ -71,6 +71,7 @@ export class Citizen {
   room = 'rinascita';
   anchorLocation = '';
   currentTargetLocation: string | null = null;
+  selected = false;
 
   private path: { x: number; y: number }[] = [];
   private pathIndex = 0;
@@ -186,10 +187,11 @@ export class Citizen {
   draw(ctx: CanvasRenderingContext2D) {
     if (!this.visible) return;
     const anchor = this.getScreenAnchor();
+    this.drawFloorShadow(ctx, anchor.x, anchor.floorY);
     this.drawAura(ctx, anchor.x, anchor.floorY);
     this.drawSprite(ctx, anchor.x, anchor.y);
     this.drawEnergyArc(ctx, anchor.x, anchor.y);
-    this.drawNameplate(ctx, anchor.x, anchor.y - 18);
+    this.drawNameplate(ctx, anchor.x, anchor.y - 22);
   }
 
   containsPoint(px: number, py: number): boolean {
@@ -251,12 +253,33 @@ export class Citizen {
     this.animator.play(mapped);
   }
 
+  setSelected(selected: boolean) {
+    this.selected = selected;
+  }
+
+  private drawFloorShadow(ctx: CanvasRenderingContext2D, centerX: number, floorY: number) {
+    ctx.save();
+    ctx.fillStyle = this.selected ? 'rgba(4, 8, 18, 0.58)' : 'rgba(4, 8, 18, 0.42)';
+    ctx.beginPath();
+    ctx.ellipse(centerX + 1, floorY + 2, this.selected ? 17 : 13, this.selected ? 7 : 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    if (this.selected) {
+      ctx.strokeStyle = hexToRgba(this.color, 0.65);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(centerX, floorY, 17, 7, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   private drawAura(ctx: CanvasRenderingContext2D, centerX: number, floorY: number) {
-    const pulse = 0.86 + Math.sin(performance.now() / 380 + this.x * 0.05) * 0.06;
+    const intensity = this.selected ? 1.4 : this.state === 'working' || this.state === 'speaking' ? 1.12 : 0.92;
+    const pulse = (0.86 + Math.sin(performance.now() / 380 + this.x * 0.05) * 0.06) * intensity;
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    const aura = ctx.createRadialGradient(centerX, floorY, 2, centerX, floorY, 18);
-    aura.addColorStop(0, hexToRgba(this.color, 0.28));
+    const aura = ctx.createRadialGradient(centerX, floorY, 2, centerX, floorY, this.selected ? 24 : 18);
+    aura.addColorStop(0, hexToRgba(this.color, this.selected ? 0.42 : 0.28));
     aura.addColorStop(1, hexToRgba(this.color, 0));
     ctx.fillStyle = aura;
     ctx.beginPath();
@@ -275,8 +298,8 @@ export class Citizen {
   private drawEnergyArc(ctx: CanvasRenderingContext2D, centerX: number, baseY: number) {
     const energy = Math.max(0.12, this.energy);
     ctx.save();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = hexToRgba(this.color, 0.7);
+    ctx.lineWidth = this.selected ? 2.5 : 2;
+    ctx.strokeStyle = hexToRgba(this.color, this.selected ? 0.92 : 0.7);
     ctx.beginPath();
     ctx.arc(centerX, baseY - 18, 11, -Math.PI * 0.8, -Math.PI * 0.8 + Math.PI * 1.6 * energy);
     ctx.stroke();
@@ -285,24 +308,45 @@ export class Citizen {
 
   private drawNameplate(ctx: CanvasRenderingContext2D, centerX: number, topY: number) {
     const statusLabel = STATE_LABEL[this.state];
+    const roleLabel = ROLE_LABEL[this.role] ?? 'AGENT';
+    const roomLabel = ROOM_LABEL[this.room] ?? this.room.toUpperCase();
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = '600 10px "Noto Sans SC", sans-serif';
     const nameWidth = ctx.measureText(this.name).width;
-    const plateWidth = Math.max(38, nameWidth + 16);
+    const roleWidth = Math.max(26, ctx.measureText(roleLabel).width + 10);
+    const roomWidth = Math.max(34, ctx.measureText(roomLabel).width + 10);
+    const plateWidth = Math.max(58, nameWidth + roleWidth + roomWidth + 28);
+    const plateX = centerX - plateWidth / 2;
 
-    roundRect(ctx, centerX - plateWidth / 2, topY - 9, plateWidth, 14, 5);
-    ctx.fillStyle = 'rgba(18, 14, 22, 0.92)';
+    roundRect(ctx, plateX, topY - 11, plateWidth, 16, 6);
+    ctx.fillStyle = this.selected ? 'rgba(22, 18, 28, 0.98)' : 'rgba(18, 14, 22, 0.92)';
     ctx.fill();
-    ctx.strokeStyle = `${this.color}66`;
+    ctx.strokeStyle = `${this.color}${this.selected ? 'aa' : '66'}`;
     ctx.lineWidth = 1;
     ctx.stroke();
+
+    roundRect(ctx, plateX + 4, topY - 8, roleWidth, 10, 4);
+    ctx.fillStyle = hexToRgba(this.color, 0.2);
+    ctx.fill();
+    ctx.fillStyle = '#fff6e5';
+    ctx.font = '700 7px "Noto Sans SC", sans-serif';
+    ctx.fillText(roleLabel, plateX + 4 + roleWidth / 2, topY);
+
+    ctx.font = '600 10px "Noto Sans SC", sans-serif';
     ctx.fillStyle = '#fff7ef';
-    ctx.fillText(this.name, centerX, topY + 1);
+    ctx.fillText(this.name, centerX, topY + 1.5);
+
+    roundRect(ctx, plateX + plateWidth - roomWidth - 4, topY - 8, roomWidth, 10, 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fill();
+    ctx.fillStyle = stateColor(this.state, this.color);
+    ctx.font = '700 7px "Noto Sans SC", sans-serif';
+    ctx.fillText(roomLabel, plateX + plateWidth - roomWidth / 2 - 4, topY);
 
     ctx.font = '500 8px "Noto Sans SC", sans-serif';
     const statusWidth = Math.max(28, ctx.measureText(statusLabel).width + 18);
-    const statusY = topY + 11;
+    const statusY = topY + 13;
     roundRect(ctx, centerX - statusWidth / 2, statusY - 5, statusWidth, 11, 5);
     ctx.fillStyle = 'rgba(29, 22, 28, 0.88)';
     ctx.fill();
@@ -346,6 +390,26 @@ function inferRoomId(location: string): string {
   if (location.startsWith('rinascita_')) return 'rinascita';
   return 'frontier';
 }
+
+const ROLE_LABEL: Record<string, string> = {
+  owner: 'OWNER',
+  sentinel: 'SEN',
+  strategist: 'STR',
+  marshal: 'MAR',
+  researcher: 'LAB',
+  curator: 'CUR',
+  scout: 'SCT',
+  captain: 'CAP',
+  guest: 'GST',
+  member: 'AGENT',
+};
+
+const ROOM_LABEL: Record<string, string> = {
+  huanglong: '瑝珑',
+  blackshores: '黑海岸',
+  rinascita: '黎那汐塔',
+  frontier: '北落野',
+};
 
 function easeInOut(value: number): number {
   return value * value * (3 - 2 * value);

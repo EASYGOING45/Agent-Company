@@ -348,7 +348,7 @@ function createHuanglongScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = y <= 2 ? 'floor_resonance' : x >= 10 ? 'floor_green' : x <= 4 ? 'floor_plank' : 'floor';
+      floor[y][x] = y <= 2 ? 'floor_resonance' : y >= 8 ? 'floor_plank' : x >= 10 ? 'floor_green' : x <= 4 ? 'floor_plank' : 'floor';
     }
   }
 
@@ -358,29 +358,35 @@ function createHuanglongScene(): SceneConfig {
     [12, 1],
     [13, 1],
   ]);
-  addDecorRow(decor, walkable, 1, 10, 3, ['bookshelf', 'bookshelf', 'plant']);
+  addDecorRow(decor, walkable, 1, 10, 4, ['bookshelf', 'bookshelf', 'plant', 'papers']);
 
   for (const [x, y, asset] of [
     [2, 3, 'console'],
+    [2, 4, 'monitor'],
     [3, 3, 'plant'],
     [5, 3, 'desk'],
     [6, 3, 'chair'],
+    [7, 3, 'rug'],
     [8, 3, 'bookshelf'],
     [9, 3, 'lamp'],
     [10, 2, 'board'],
+    [10, 3, 'papers'],
     [11, 3, 'shelf'],
     [12, 3, 'lamp'],
     [4, 7, 'table'],
     [5, 7, 'chair'],
     [6, 7, 'chair'],
     [7, 7, 'plant'],
+    [8, 7, 'rug'],
     [11, 7, 'divider'],
     [12, 7, 'window'],
     [13, 7, 'plant'],
     [3, 9, 'couch'],
     [4, 9, 'table'],
     [5, 9, 'lamp'],
+    [6, 9, 'papers'],
     [10, 9, 'bench'],
+    [11, 9, 'plant'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);
@@ -408,7 +414,7 @@ function createBlackShoresScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = x >= 5 && x <= 10 ? 'floor_ring' : y >= 8 ? 'floor_plank_dark' : 'floor_purple';
+      floor[y][x] = x >= 5 && x <= 10 ? 'floor_ring' : y >= 8 ? 'floor_plank_dark' : y <= 3 ? 'floor_grid' : 'floor_purple';
     }
   }
 
@@ -416,13 +422,14 @@ function createBlackShoresScene(): SceneConfig {
     [2, 1],
     [13, 1],
   ]);
-  addDecorRow(decor, walkable, 4, 2, 3, ['console', 'desk', 'chair']);
-  addDecorRow(decor, walkable, 10, 2, 3, ['archive', 'bookshelf', 'plant']);
+  addDecorRow(decor, walkable, 4, 2, 4, ['console', 'monitor', 'desk', 'chair']);
+  addDecorRow(decor, walkable, 10, 2, 4, ['archive', 'bookshelf', 'plant', 'papers']);
 
   for (const [x, y, asset] of [
     [7, 3, 'holo'],
     [8, 3, 'lamp'],
     [9, 3, 'plant'],
+    [10, 3, 'rug'],
     [11, 4, 'board'],
     [12, 4, 'divider'],
     [3, 7, 'pod'],
@@ -430,9 +437,11 @@ function createBlackShoresScene(): SceneConfig {
     [6, 8, 'couch'],
     [7, 8, 'table'],
     [8, 8, 'chair'],
+    [9, 8, 'papers'],
     [10, 8, 'plant'],
     [12, 8, 'couch'],
     [13, 8, 'plant'],
+    [11, 8, 'rug'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);
@@ -460,7 +469,7 @@ function createRinascitaScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = y >= 7 ? 'floor_carpet' : x >= 10 ? 'floor_tile_warm' : 'floor_warm';
+      floor[y][x] = y >= 7 ? 'floor_carpet' : x >= 10 ? 'floor_tile_warm' : x <= 4 ? 'floor_plank' : 'floor_warm';
     }
   }
 
@@ -470,19 +479,22 @@ function createRinascitaScene(): SceneConfig {
     [12, 1],
     [13, 1],
   ]);
-  addDecorRow(decor, walkable, 2, 3, 3, ['bookshelf', 'desk', 'chair']);
-  addDecorRow(decor, walkable, 10, 3, 3, ['board', 'archive', 'lamp']);
+  addDecorRow(decor, walkable, 2, 3, 4, ['bookshelf', 'desk', 'chair', 'papers']);
+  addDecorRow(decor, walkable, 10, 3, 4, ['board', 'archive', 'lamp', 'plant']);
 
   for (const [x, y, asset] of [
     [4, 4, 'plant'],
+    [5, 4, 'rug'],
     [6, 4, 'table'],
     [7, 4, 'chair'],
     [8, 4, 'chair'],
     [9, 4, 'lamp'],
     [4, 8, 'bench'],
     [5, 8, 'plant'],
+    [6, 8, 'papers'],
     [8, 8, 'table'],
     [9, 8, 'chair'],
+    [10, 8, 'rug'],
     [11, 8, 'window'],
     [12, 8, 'window'],
     [13, 8, 'plant'],
@@ -513,7 +525,7 @@ function createFrontierScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = x <= 4 ? 'floor_plank_dark' : y <= 4 ? 'floor_grid' : x >= 10 ? 'floor_blue' : 'floor';
+      floor[y][x] = x <= 4 ? 'floor_plank_dark' : y <= 4 ? 'floor_grid' : x >= 10 ? 'floor_blue' : y >= 8 ? 'floor_plank' : 'floor';
     }
   }
 
@@ -521,18 +533,20 @@ function createFrontierScene(): SceneConfig {
     [12, 1],
     [13, 1],
   ]);
-  addDecorRow(decor, walkable, 2, 3, 3, ['console', 'desk', 'chair']);
-  addDecorRow(decor, walkable, 9, 3, 3, ['board', 'pillar', 'lamp']);
+  addDecorRow(decor, walkable, 2, 3, 4, ['console', 'monitor', 'desk', 'chair']);
+  addDecorRow(decor, walkable, 9, 3, 4, ['board', 'pillar', 'lamp', 'papers']);
 
   for (const [x, y, asset] of [
     [4, 7, 'crate'],
     [5, 8, 'bar'],
     [6, 8, 'chair'],
+    [7, 8, 'rug'],
     [8, 8, 'crate'],
     [10, 8, 'table'],
     [11, 8, 'chair'],
     [12, 8, 'bench'],
     [13, 8, 'plant'],
+    [12, 9, 'papers'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);

@@ -42,6 +42,7 @@ export class SpeechBubbleSystem implements RenderLayer {
       const alpha = Math.min(1, b.life * 2) * Math.min(1, (b.maxLife - b.life) * 2);
 
       ctx.save();
+      ctx.translate(0, -Math.sin((b.life / b.maxLife) * Math.PI) * 3);
       
       // 计算文字宽度
       ctx.font = '11px "Noto Sans SC", sans-serif';
@@ -54,13 +55,16 @@ export class SpeechBubbleSystem implements RenderLayer {
       const boxHeight = lines.length * lineHeight + padding;
 
       // 气泡背景
-      ctx.fillStyle = `rgba(10, 10, 26, ${0.9 * alpha})`;
-      ctx.strokeStyle = `rgba(0, 212, 255, ${alpha})`;
+      const x = b.x - boxWidth / 2;
+      const y = b.y - boxHeight;
+      const bubbleGlow = ctx.createLinearGradient(0, y, 0, y + boxHeight);
+      bubbleGlow.addColorStop(0, `rgba(27, 22, 38, ${0.95 * alpha})`);
+      bubbleGlow.addColorStop(1, `rgba(10, 10, 26, ${0.9 * alpha})`);
+      ctx.fillStyle = bubbleGlow;
+      ctx.strokeStyle = `rgba(255, 214, 136, ${alpha})`;
       ctx.lineWidth = 1;
       
       // 圆角矩形
-      const x = b.x - boxWidth / 2;
-      const y = b.y - boxHeight;
       this.roundRect(ctx, x, y, boxWidth, boxHeight, 4);
       ctx.fill();
       ctx.stroke();
@@ -74,7 +78,7 @@ export class SpeechBubbleSystem implements RenderLayer {
       ctx.fill();
 
       // 文字
-      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillStyle = `rgba(255, 250, 240, ${alpha})`;
       ctx.textAlign = 'left';
       lines.forEach((line, idx) => {
         ctx.fillText(line, x + padding, y + padding + 10 + idx * lineHeight);

@@ -66,14 +66,20 @@ export class ParticleSystem implements RenderLayer {
       if (particle.type === 'zzz') {
         ctx.font = `bold ${12 + particle.life * 4}px monospace`;
         ctx.fillStyle = `rgba(160, 205, 255, ${alpha})`;
+        ctx.shadowColor = 'rgba(160, 205, 255, 0.45)';
+        ctx.shadowBlur = 8;
         ctx.fillText(particle.text ?? 'Z', particle.x, particle.y);
       } else if (particle.type === 'exclamation') {
         ctx.font = 'bold 16px monospace';
         ctx.fillStyle = `rgba(255, 102, 102, ${alpha})`;
+        ctx.shadowColor = 'rgba(255, 102, 102, 0.45)';
+        ctx.shadowBlur = 8;
         ctx.fillText(particle.text ?? '!', particle.x, particle.y);
       } else if (particle.type === 'thought') {
         ctx.font = 'bold 14px monospace';
         ctx.fillStyle = `rgba(222, 228, 242, ${alpha})`;
+        ctx.shadowColor = 'rgba(222, 228, 242, 0.4)';
+        ctx.shadowBlur = 8;
         ctx.fillText(particle.text ?? '?', particle.x, particle.y);
       } else {
         const size = particle.size ?? 6;

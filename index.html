@@ -123,6 +123,10 @@
     .stage {
       padding: 1rem;
     }
+    .stage-shell {
+      display: grid;
+      gap: 0.8rem;
+    }
     .stage-hero {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 220px;
@@ -166,6 +170,51 @@
       color: var(--accent);
       box-shadow: 0 0 0 1px var(--accent-soft), 0 0 24px var(--accent-soft);
       transform: translateY(-1px);
+    }
+    .stage-banner {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      padding: 0.7rem 0.85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
+        rgba(14, 11, 18, 0.74);
+    }
+    .stage-banner strong {
+      color: var(--accent-gold);
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+    }
+    .stage-banner span {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .stage-banner .status-strip {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.32rem 0.62rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      font-size: 0.75rem;
+    }
+    .status-chip::before {
+      content: "";
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent-soft);
     }
     #canvas-shell {
       position: relative;
@@ -293,6 +342,7 @@
       box-shadow: 0 0 12px var(--accent-soft);
     }
     .control-btn[data-tone="gold"] { color: var(--accent-gold); border-color: rgba(243, 197, 107, 0.25); }
+    .control-btn[data-tone="soft"] { color: #c9deff; border-color: rgba(147, 184, 255, 0.24); }
     .sidebar {
       display: grid;
       gap: 1rem;
@@ -443,12 +493,25 @@
         </div>
       </div>
 
-      <div id="canvas-shell">
-        <div id="app"></div>
-        <div class="loading" id="loading">
+      <div class="stage-shell">
+        <div class="stage-banner">
           <div>
-            <h2>连接共鸣网络</h2>
-            <p>Canvas 场景与心跳流正在同步…</p>
+            <strong>Miniverse Atelier View</strong>
+            <span>像素布景、光照池、角色标签与选中高亮已联动</span>
+          </div>
+          <div class="status-strip">
+            <div class="status-chip">角色 glow</div>
+            <div class="status-chip">room labels</div>
+            <div class="status-chip">furniture pass</div>
+          </div>
+        </div>
+        <div id="canvas-shell">
+          <div id="app"></div>
+          <div class="loading" id="loading">
+            <div>
+              <h2>连接共鸣网络</h2>
+              <p>Canvas 场景与心跳流正在同步…</p>
+            </div>
           </div>
         </div>
       </div>
