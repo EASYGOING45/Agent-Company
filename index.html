@@ -216,6 +216,11 @@
       background: var(--accent);
       box-shadow: 0 0 12px var(--accent-soft);
     }
+    .status-chip[data-state="connected"]::before { background: #87f0c7; }
+    .status-chip[data-state="reconnecting"]::before,
+    .status-chip[data-state="connecting"]::before { background: #ffd37c; }
+    .status-chip[data-state="error"]::before,
+    .status-chip[data-state="disconnected"]::before { background: #ff8f8f; }
     #canvas-shell {
       position: relative;
       min-height: 420px;
@@ -304,11 +309,18 @@
       text-align: center;
       gap: 0.7rem;
       color: var(--muted);
+      backdrop-filter: blur(8px);
+      background: linear-gradient(180deg, rgba(17, 12, 18, 0.78), rgba(17, 12, 18, 0.9));
+      transition: opacity 220ms ease;
+      z-index: 4;
     }
+    .loading.is-hidden { opacity: 0; pointer-events: none; }
     .loading h2 {
-      font-family: "Orbitron", sans-serif;
+      font-family: "Press Start 2P", cursive;
       color: var(--accent);
       letter-spacing: 0.08em;
+      font-size: 0.88rem;
+      line-height: 1.6;
     }
     .controls {
       display: flex;
@@ -343,6 +355,10 @@
     }
     .control-btn[data-tone="gold"] { color: var(--accent-gold); border-color: rgba(243, 197, 107, 0.25); }
     .control-btn[data-tone="soft"] { color: #c9deff; border-color: rgba(147, 184, 255, 0.24); }
+    .control-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
     .sidebar {
       display: grid;
       gap: 1rem;
@@ -432,17 +448,142 @@
       color: var(--text);
       margin-top: 0.16rem;
     }
+    .character-popup {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 3;
+      min-width: 170px;
+      padding: 0.7rem 0.8rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: linear-gradient(180deg, rgba(24, 18, 28, 0.96), rgba(14, 12, 20, 0.92));
+      box-shadow: 0 18px 36px rgba(0,0,0,0.3);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      transform: translate(-999px, -999px);
+    }
+    .character-popup.is-visible { opacity: 1; }
+    .character-popup strong {
+      display: block;
+      color: var(--accent-gold);
+      margin-bottom: 0.2rem;
+      font-size: 0.92rem;
+    }
+    .character-popup p,
+    .character-popup span {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .chat-history {
+      list-style: none;
+      display: grid;
+      gap: 0.75rem;
+      max-height: 320px;
+      overflow: auto;
+      padding-right: 0.2rem;
+    }
+    .chat-entry {
+      padding: 0.8rem 0.85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+    .chat-entry[data-channel="group"] {
+      background: linear-gradient(180deg, rgba(255, 215, 122, 0.08), rgba(255,255,255,0.02));
+    }
+    .chat-entry[data-channel="system"] {
+      background: linear-gradient(180deg, rgba(100, 213, 255, 0.08), rgba(255,255,255,0.02));
+    }
+    .chat-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+      align-items: baseline;
+    }
+    .chat-line strong {
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .chat-line span {
+      color: rgba(255,255,255,0.45);
+      font-size: 0.74rem;
+      white-space: nowrap;
+    }
+    .chat-entry p {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.88rem;
+    }
+    .settings-panel {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 12;
+      width: min(320px, calc(100vw - 1.5rem));
+      padding: 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(34, 24, 28, 0.96), rgba(18, 13, 18, 0.94));
+      box-shadow: 0 18px 42px rgba(0,0,0,0.32);
+      transform: translateY(calc(100% + 1.25rem));
+      transition: transform 220ms ease;
+    }
+    .settings-panel.is-open { transform: translateY(0); }
+    .settings-panel h3 {
+      margin-bottom: 0.9rem;
+      color: var(--accent-gold);
+      font-size: 0.96rem;
+    }
+    .settings-row {
+      display: grid;
+      gap: 0.35rem;
+      margin-top: 0.9rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .settings-row input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .settings-inline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .settings-inline input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+    .hud-actions {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      margin-top: 0.85rem;
+      flex-wrap: wrap;
+    }
     footer {
       padding: 0 2rem 1.4rem;
       color: rgba(234, 243, 255, 0.38);
       font-size: 0.82rem;
       text-align: center;
     }
+    body.compact-ui .sidebar-card,
+    body.compact-ui .stage {
+      padding: 0.8rem 0.9rem;
+    }
     @media (max-width: 980px) {
       header { flex-direction: column; align-items: stretch; }
       .metrics { justify-content: flex-start; }
       main { grid-template-columns: 1fr; width: min(900px, calc(100vw - 1rem)); }
       .stage-hero { grid-template-columns: 1fr; }
+      .settings-panel { right: 0.75rem; left: 0.75rem; width: auto; }
+      .chat-history { max-height: none; }
     }
   </style>
 </head>
@@ -497,20 +638,29 @@
         <div class="stage-banner">
           <div>
             <strong>Miniverse Atelier View</strong>
-            <span>像素布景、光照池、角色标签与选中高亮已联动</span>
+            <span>角色交互、活动表现、出口跳转与镜头聚焦已联动</span>
+            <div class="hud-actions">
+              <button class="control-btn" data-tone="soft" id="settings-toggle">设置</button>
+              <span class="status-chip" id="connection-state" data-state="idle">待命</span>
+            </div>
           </div>
           <div class="status-strip">
             <div class="status-chip">角色 glow</div>
-            <div class="status-chip">room labels</div>
-            <div class="status-chip">furniture pass</div>
+            <div class="status-chip">chat feed</div>
+            <div class="status-chip">room exits</div>
           </div>
         </div>
         <div id="canvas-shell">
           <div id="app"></div>
+          <div class="character-popup" id="character-popup">
+            <strong id="popup-name">选择共鸣者</strong>
+            <p id="popup-meta">角色信息</p>
+            <span id="popup-status">待机</span>
+          </div>
           <div class="loading" id="loading">
             <div>
-              <h2>连接共鸣网络</h2>
-              <p>Canvas 场景与心跳流正在同步…</p>
+              <h2 id="loading-title">连接共鸣网络</h2>
+              <p id="loading-text">Canvas 场景与心跳流正在同步…</p>
             </div>
           </div>
         </div>
@@ -534,6 +684,12 @@
       <section class="sidebar-card">
         <h3>地区态势</h3>
         <p id="agents-info">正在获取共鸣者信息…</p>
+        <div class="detail-list">
+          <div>
+            <div class="detail-label">出口路线</div>
+            <div class="detail-value" id="room-exits">加载中</div>
+          </div>
+        </div>
       </section>
       <section class="sidebar-card is-empty" id="citizen-card">
         <div class="citizen-art" id="citizen-art"></div>
@@ -558,12 +714,51 @@
             <div class="detail-label">所在房间</div>
             <div class="detail-value" id="citizen-room">黎那汐塔</div>
           </div>
+          <div>
+            <div class="detail-label">活动模式</div>
+            <div class="detail-value" id="citizen-activity">观察中</div>
+          </div>
         </div>
+      </section>
+      <section class="sidebar-card">
+        <h3>沟通面板</h3>
+        <ul class="chat-history" id="chat-history">
+          <li class="chat-entry" data-channel="system" data-mood="info">
+            <div class="chat-line">
+              <strong>系统</strong>
+              <span>初始化</span>
+            </div>
+            <p>等待实时消息流接入…</p>
+          </li>
+        </ul>
       </section>
     </aside>
   </main>
 
   <footer>Cloudflare Workers + Durable Objects 驱动 · Canvas API 渲染 · 索拉里斯大陆多地区同步</footer>
+
+  <section class="settings-panel" id="settings-panel">
+    <h3>Settings</h3>
+    <label class="settings-row">
+      <div class="settings-inline">
+        <span>环境光效</span>
+        <input type="checkbox" id="setting-ambient" checked>
+      </div>
+    </label>
+    <label class="settings-row">
+      <div class="settings-inline">
+        <span>紧凑布局</span>
+        <input type="checkbox" id="setting-compact">
+      </div>
+    </label>
+    <label class="settings-row">
+      <div class="settings-inline">
+        <span>镜头缩放</span>
+        <strong id="setting-zoom-value">1.00x</strong>
+      </div>
+      <input type="range" id="setting-zoom" min="0.9" max="1.15" step="0.01" value="1">
+    </label>
+  </section>
 
   <script type="module">
     import './src/main.ts';

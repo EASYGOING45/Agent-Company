@@ -80,6 +80,9 @@ export class Citizen {
   private tileWidth: number;
   private tileHeight: number;
   private facing: 'up' | 'down' | 'left' | 'right' = 'down';
+  private idleLookTimer = 0;
+  private idleLookInterval = 1.8;
+  private speakingTarget: { x: number; y: number } | null = null;
 
   constructor(config: CitizenConfig, spriteSheet: SpriteSheet, tileWidth: number, tileHeight: number) {
     this.agentId = config.agentId;
@@ -161,6 +164,13 @@ export class Citizen {
     return this.pathIndex > 0 && this.pathIndex < this.path.length;
   }
 
+  setSpeakingTarget(target: { x: number; y: number } | null) {
+    this.speakingTarget = target;
+    if (target && !this.isMoving()) {
+      this.faceTowardTile(target.x, target.y);
+    }
+  }
+
   updateState(newState: AgentState, task?: string | null, energy?: number, room?: string) {
     const prevState = this.state;
     this.state = newState;
@@ -178,6 +188,7 @@ export class Citizen {
     if (this.isMoving()) {
       this.updateMovement(delta, pathfinder, context);
     } else {
+      this.updateIdleLook(delta);
       this.playIdleAnimation();
     }
 
@@ -189,6 +200,7 @@ export class Citizen {
     const anchor = this.getScreenAnchor();
     this.drawFloorShadow(ctx, anchor.x, anchor.floorY);
     this.drawAura(ctx, anchor.x, anchor.floorY);
+    this.drawStateProp(ctx, anchor.x, anchor.y, anchor.floorY);
     this.drawSprite(ctx, anchor.x, anchor.y);
     this.drawEnergyArc(ctx, anchor.x, anchor.y);
     this.drawNameplate(ctx, anchor.x, anchor.y - 22);
@@ -253,6 +265,35 @@ export class Citizen {
     this.animator.play(mapped);
   }
 
+  private updateIdleLook(delta: number) {
+    if (this.state === 'speaking' && this.speakingTarget) {
+      this.faceTowardTile(this.speakingTarget.x, this.speakingTarget.y);
+      return;
+    }
+
+    if (this.state !== 'idle' || this.selected) return;
+
+    this.idleLookTimer += delta;
+    if (this.idleLookTimer < this.idleLookInterval) return;
+
+    const sequence: Array<typeof this.facing> = ['left', 'up', 'right', 'down'];
+    const nextIndex = (sequence.indexOf(this.facing) + 1 + Math.abs(hashString(this.agentId)) % 2) % sequence.length;
+    this.facing = sequence[nextIndex];
+    this.idleLookTimer = 0;
+    this.idleLookInterval = 1.6 + (Math.abs(hashString(`${this.agentId}:${nextIndex}`)) % 12) * 0.12;
+  }
+
+  private faceTowardTile(tileX: number, tileY: number) {
+    const current = this.getTilePosition();
+    const dx = tileX - current.x;
+    const dy = tileY - current.y;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      this.facing = dx >= 0 ? 'right' : 'left';
+    } else if (Math.abs(dy) > 0) {
+      this.facing = dy >= 0 ? 'down' : 'up';
+    }
+  }
+
   setSelected(selected: boolean) {
     this.selected = selected;
   }
@@ -288,10 +329,69 @@ export class Citizen {
     ctx.restore();
   }
 
+  private drawStateProp(ctx: CanvasRenderingContext2D, centerX: number, baseY: number, floorY: number) {
+    if (this.isMoving()) return;
+
+    if (this.state === 'working') {
+      this.drawWorkRig(ctx, centerX, floorY);
+    } else if (this.state === 'thinking') {
+      this.drawThoughtCluster(ctx, centerX, baseY - 8);
+    } else if (this.state === 'speaking') {
+      this.drawVoicePulse(ctx, centerX, baseY - 10);
+    }
+  }
+
   private drawSprite(ctx: CanvasRenderingContext2D, centerX: number, baseY: number) {
     ctx.save();
     ctx.translate(centerX - 16, baseY - 24);
     this.animator.draw(ctx, 0, 0);
+    ctx.restore();
+  }
+
+  private drawWorkRig(ctx: CanvasRenderingContext2D, centerX: number, floorY: number) {
+    const pulse = 0.76 + Math.sin(performance.now() / 150) * 0.12;
+    ctx.save();
+    ctx.translate(centerX, floorY - 5);
+    ctx.fillStyle = 'rgba(14, 18, 26, 0.86)';
+    ctx.fillRect(-10, -4, 20, 5);
+    ctx.strokeStyle = hexToRgba(this.color, 0.7);
+    ctx.strokeRect(-10, -4, 20, 5);
+    ctx.fillStyle = hexToRgba(this.color, 0.35 + pulse * 0.16);
+    ctx.fillRect(-7, -3, 5, 2);
+    ctx.fillRect(1, -3, 6, 2);
+    ctx.fillStyle = 'rgba(255, 246, 223, 0.7)';
+    ctx.fillRect(-8, -8, 2, 4);
+    ctx.fillRect(6, -8, 2, 4);
+    ctx.restore();
+  }
+
+  private drawThoughtCluster(ctx: CanvasRenderingContext2D, centerX: number, topY: number) {
+    const bob = Math.sin(performance.now() / 340 + this.x * 0.01) * 2;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 250, 241, 0.88)';
+    ctx.strokeStyle = 'rgba(197, 216, 255, 0.78)';
+    for (const [x, y, radius] of [
+      [centerX - 7, topY - 18 + bob, 3],
+      [centerX, topY - 24 + bob, 5],
+      [centerX + 8, topY - 17 + bob, 4],
+    ] as const) {
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  private drawVoicePulse(ctx: CanvasRenderingContext2D, centerX: number, topY: number) {
+    const pulse = 0.9 + Math.sin(performance.now() / 180) * 0.08;
+    ctx.save();
+    ctx.strokeStyle = hexToRgba('#ffd37c', 0.82);
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.arc(centerX, topY - 12, 9 * pulse, -Math.PI * 0.15, Math.PI * 0.65);
+    ctx.arc(centerX + 2, topY - 12, 13 * pulse, -Math.PI * 0.05, Math.PI * 0.55);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -398,6 +498,8 @@ const ROLE_LABEL: Record<string, string> = {
   marshal: 'MAR',
   researcher: 'LAB',
   curator: 'CUR',
+  designer: 'DSN',
+  envoy: 'ENV',
   scout: 'SCT',
   captain: 'CAP',
   guest: 'GST',
@@ -446,4 +548,12 @@ function stateColor(state: AgentState, fallback: string): string {
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
   ctx.beginPath();
   ctx.roundRect(x, y, width, height, radius);
+}
+
+function hashString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0;
+  }
+  return hash;
 }

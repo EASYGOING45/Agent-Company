@@ -2,13 +2,14 @@
  * 鸣潮元宇宙 - 主入口
  */
 
-import { Renderer } from './canvas/Renderer.ts';
+import { Renderer, getCurrentProjection, projectIso } from './canvas/Renderer.ts';
 import { Scene } from './scene/Scene.ts';
 import { Citizen, CitizenLayer, type AgentState } from './citizens/Citizen.ts';
 import { SpriteSheet } from './sprites/SpriteSheet.ts';
 import { ParticleSystem } from './effects/Particles.ts';
 import { SpeechBubbleSystem } from './effects/SpeechBubble.ts';
 import { Signal, type AgentStatus } from './signal/Signal.ts';
+import { UiController, type CharacterDetail, type ChatEntry, type SettingsState } from './ui/UiController.ts';
 import {
   INITIAL_CITIZENS,
   REGION_ORDER,
@@ -48,6 +49,41 @@ const SPRITE_CONFIGS = Object.fromEntries(
 
 type CitizenAgentSnapshot = AgentStatus & { agent: string };
 
+interface ExitDefinition {
+  region: RegionId;
+  label: string;
+  location: string;
+}
+
+interface ExitHotspot extends ExitDefinition {
+  x: number;
+  y: number;
+  radius: number;
+}
+
+const REGION_EXITS: Record<RegionId, ExitDefinition[]> = {
+  huanglong: [
+    { region: 'blackshores', label: '潮汐航道', location: 'huanglong_rainbow_town' },
+    { region: 'rinascita', label: '修会渡桥', location: 'huanglong_cloud_peak' },
+    { region: 'frontier', label: '边境补给线', location: 'huanglong_peach_garden' },
+  ],
+  blackshores: [
+    { region: 'huanglong', label: '今州回路', location: 'blackshores_command_desk' },
+    { region: 'rinascita', label: '潮汐密门', location: 'blackshores_garden' },
+    { region: 'frontier', label: '遗址穿梭', location: 'blackshores_data_wall' },
+  ],
+  rinascita: [
+    { region: 'huanglong', label: '金穹桥', location: 'rinascita_walk_1' },
+    { region: 'blackshores', label: '黑潮回线', location: 'rinascita_tide_observatory' },
+    { region: 'frontier', label: '北落航廊', location: 'rinascita_cloister' },
+  ],
+  frontier: [
+    { region: 'huanglong', label: '今州前线', location: 'frontier_command_post' },
+    { region: 'blackshores', label: '泰缇斯中继', location: 'frontier_ruins_gate' },
+    { region: 'rinascita', label: '修会航标', location: 'frontier_field_lab' },
+  ],
+};
+
 class WuWaVerse {
   private renderer: Renderer;
   private scene: Scene;
@@ -56,11 +92,18 @@ class WuWaVerse {
   private particles = new ParticleSystem();
   private speechBubbles = new SpeechBubbleSystem();
   private signal: Signal;
+  private ui = new UiController();
   private particleTimers = new Map<string, number>();
   private idleTimers = new Map<string, number>();
+  private speechTimers = new Map<string, number>();
   private agents = new Map<string, CitizenAgentSnapshot>();
+  private agentSignatures = new Map<string, string>();
+  private chatHistory: ChatEntry[] = [];
   private activeRegion: RegionId = 'rinascita';
   private selectedCitizen: Citizen | null = null;
+  private exitHotspots: ExitHotspot[] = [];
+  private settings: SettingsState = this.ui.getSettings();
+  private switchingRegion = false;
 
   constructor(private container: HTMLElement, config: { wsUrl: string; agentsUrl: string; heartbeatUrl: string }) {
     this.renderer = new Renderer(container, 512, 384, 2);
@@ -78,16 +121,31 @@ class WuWaVerse {
         this.updateCitizens(delta);
       },
     });
+    this.renderer.addLayer({
+      order: 6,
+      render: (ctx, delta) => {
+        this.renderExitMarkers(ctx, delta);
+      },
+    });
     this.renderer.addLayer(this.citizenLayer);
     this.renderer.addLayer(this.particles);
     this.renderer.addLayer(this.speechBubbles);
 
     this.renderer.canvas.addEventListener('click', (event) => this.handleClick(event));
+    this.renderer.canvas.addEventListener('mousemove', (event) => this.handleHover(event));
     this.signal.onUpdate((agents) => this.handleSignalUpdate(agents as CitizenAgentSnapshot[]));
+    this.signal.onEvent((event) => this.handleSignalEvent(event));
+    this.signal.onConnectionStateChange((state) => this.ui.setConnectionState(state));
     wireRegionButtons((region) => void this.switchRegion(region));
+    this.ui.onSettingsChange((settings) => {
+      this.settings = settings;
+      this.renderer.setAmbientFx(settings.ambientFx);
+      this.applyCameraFocus(this.selectedCitizen !== null);
+    });
   }
 
   async start() {
+    this.ui.setLoading(true, '载入多房间基地', '角色精灵、场景纹理与同步信号正在初始化…');
     await this.scene.load();
 
     for (const config of INITIAL_CITIZENS) {
@@ -120,11 +178,16 @@ class WuWaVerse {
         role: config.role,
         faction: config.faction,
       });
+      this.agentSignatures.set(config.agentId, this.createAgentSignature(this.agents.get(config.agentId)!));
     }
 
     this.citizenLayer.setCitizens(this.citizens);
+    this.seedChatHistory();
     this.refreshRegionUi();
     this.refreshAgentUi();
+    this.refreshSelectedCitizen();
+    this.applyCameraFocus(false, true);
+    this.ui.setLoading(false);
     this.signal.start();
     this.renderer.start();
   }
@@ -136,11 +199,15 @@ class WuWaVerse {
 
   private updateCitizens(delta: number) {
     const blockedByCitizen = new Map<string, string>();
-    for (const citizen of this.citizens.filter((entry) => entry.visible && entry.room === this.activeRegion)) {
+    const activeCitizens = this.citizens.filter((entry) => entry.visible && entry.room === this.activeRegion);
+
+    for (const citizen of activeCitizens) {
       for (const reserved of citizen.getReservedTiles()) {
         blockedByCitizen.set(reserved, citizen.agentId);
       }
     }
+
+    this.updateSpeakingTargets(activeCitizens);
 
     for (const citizen of this.citizens) {
       citizen.visible = citizen.state !== 'offline' && citizen.room === this.activeRegion;
@@ -152,6 +219,9 @@ class WuWaVerse {
       citizen.update(delta, this.scene.pathfinder, { blockedTiles });
       this.updateCitizenEffects(citizen, delta);
     }
+
+    this.syncCharacterPopup();
+    this.applyCameraFocus(this.selectedCitizen !== null);
   }
 
   private routeCitizen(citizen: Citizen, delta: number, blockedByCitizen: Map<string, string>) {
@@ -214,12 +284,14 @@ class WuWaVerse {
   private handleSignalUpdate(agents: CitizenAgentSnapshot[]) {
     for (const agent of agents) {
       const region = normalizeRegion(agent.region ?? agent.room);
+      const previous = this.agents.get(agent.agent);
       const nextAgent = {
         ...agent,
         region,
         room: region,
       };
       this.agents.set(agent.agent, nextAgent);
+      this.logAgentTransition(previous, nextAgent);
       const citizen = this.citizens.find((entry) => entry.agentId === agent.agent);
       if (!citizen) continue;
 
@@ -238,6 +310,7 @@ class WuWaVerse {
       }
     }
 
+    this.logGroupConversation();
     this.refreshAgentUi();
     this.refreshSelectedCitizen();
   }
@@ -260,35 +333,86 @@ class WuWaVerse {
         this.particles.emitExclamation(anchor.x, anchor.y);
       }
     }
+
+    const speechTimer = (this.speechTimers.get(citizen.agentId) ?? 0) + delta;
+    this.speechTimers.set(citizen.agentId, speechTimer);
+    if (speechTimer > 2.3) {
+      this.speechTimers.set(citizen.agentId, 0);
+      const anchor = citizen.getScreenAnchor();
+      const snapshot = this.agents.get(citizen.agentId);
+      if (citizen.state === 'speaking' && snapshot?.task) {
+        this.speechBubbles.show(anchor.x, anchor.y, snapshot.task, 3.8);
+      } else if (citizen.state === 'thinking') {
+        this.speechBubbles.show(anchor.x, anchor.y, '正在整理思路…', 2.8);
+      } else if (citizen.state === 'working' && snapshot?.task) {
+        this.speechBubbles.show(anchor.x, anchor.y, `执行：${snapshot.task}`, 3.2);
+      }
+    }
   }
 
   private handleClick(event: MouseEvent) {
     const world = this.renderer.screenToWorld(event.clientX, event.clientY);
+    const exit = this.exitHotspots.find((entry) => distanceSq(world.x, world.y, entry.x, entry.y) <= entry.radius * entry.radius);
+    if (exit) {
+      void this.switchRegion(exit.region);
+      return;
+    }
+
     const target = [...this.citizens]
       .filter((citizen) => citizen.visible && citizen.containsPoint(world.x, world.y))
       .sort((a, b) => b.y - a.y)[0];
 
-    if (!target) return;
+    if (!target) {
+      for (const citizen of this.citizens) citizen.setSelected(false);
+      this.selectedCitizen = null;
+      this.refreshSelectedCitizen();
+      this.syncCharacterPopup();
+      return;
+    }
     for (const citizen of this.citizens) citizen.setSelected(false);
     target.setSelected(true);
     this.selectedCitizen = target;
     this.refreshSelectedCitizen();
+    this.appendChat({
+      id: `inspect-${target.agentId}-${Date.now()}`,
+      speaker: '系统',
+      channel: 'system',
+      text: `已打开 ${target.name} 的角色档案`,
+      mood: 'info',
+      meta: '角色交互',
+    });
     const snapshot = this.agents.get(target.agentId);
     const status = snapshot?.task ? `${target.name}: ${snapshot.task}` : `${target.name}: ${target.state}`;
     const anchor = target.getScreenAnchor();
     this.speechBubbles.show(anchor.x, anchor.y, status, 3);
+    this.applyCameraFocus(true);
   }
 
   private async switchRegion(region: RegionId) {
-    if (region === this.activeRegion) return;
-    this.activeRegion = region;
-    await this.scene.setConfig(WORLD[region].scene);
+    if (region === this.activeRegion || this.switchingRegion) return;
+    this.switchingRegion = true;
+    this.ui.setLoading(true, `切换至 ${WORLD[region].name}`, '镜头与场景正在重构路线…');
+    await this.renderer.playTransition(WORLD[region].name, async () => {
+      this.activeRegion = region;
+      await this.scene.setConfig(WORLD[region].scene);
+      this.applyCameraFocus(false, true);
+    });
     for (const citizen of this.citizens) {
       citizen.setSelected(citizen === this.selectedCitizen && citizen.room === region);
     }
     this.refreshRegionUi();
     this.refreshAgentUi();
     this.refreshSelectedCitizen();
+    this.appendChat({
+      id: `room-${region}-${Date.now()}`,
+      speaker: '系统',
+      channel: 'system',
+      text: `视角已切换至 ${WORLD[region].name}，可点击出口继续漫游。`,
+      mood: 'info',
+      meta: '房间导航',
+    });
+    this.ui.setLoading(false);
+    this.switchingRegion = false;
   }
 
   private resolveDesiredRegion(citizen: Citizen, snapshot?: CitizenAgentSnapshot): RegionId {
@@ -330,6 +454,7 @@ class WuWaVerse {
     if (sceneName) sceneName.textContent = region.shortName;
     if (sceneMeta) sceneMeta.textContent = region.description;
     setElementBackground(document.getElementById('region-scene-art'), region.scene.backdrop ?? null);
+    this.ui.setExitSummary(REGION_EXITS[region.id].map((entry) => `${entry.label} → ${WORLD[entry.region].name}`));
 
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-region-switch]')) {
       button.classList.toggle('active', button.dataset.regionSwitch === region.id);
@@ -353,44 +478,241 @@ class WuWaVerse {
         });
       info.textContent = list.length > 0 ? list.join('\n') : '当前地区暂无活跃共鸣者。';
     }
+    this.ui.setChatHistory(this.chatHistory);
   }
 
   private refreshSelectedCitizen() {
-    const panel = document.getElementById('citizen-card');
-    const title = document.getElementById('citizen-name');
-    const meta = document.getElementById('citizen-meta');
-    const task = document.getElementById('citizen-task');
-    const energy = document.getElementById('citizen-energy');
-    const room = document.getElementById('citizen-room');
-    const faction = document.getElementById('citizen-faction');
-    const avatarChip = document.getElementById('citizen-avatar-chip');
-    if (!panel || !title || !meta || !task || !energy || !room || !faction || !avatarChip) return;
-
     const selected = this.selectedCitizen;
-    if (!selected) {
-      panel.classList.add('is-empty');
-      title.textContent = '选择共鸣者';
-      meta.textContent = '点击画布中的角色查看详情';
-      faction.textContent = '共鸣者档案';
-      task.textContent = '--';
-      energy.textContent = '--';
-      room.textContent = WORLD[this.activeRegion].name;
-      setElementBackground(document.getElementById('citizen-art'), WORLD[this.activeRegion].scene.backdrop ?? null);
-      setElementBackground(avatarChip, null);
+    const snapshot = selected ? this.agents.get(selected.agentId) : undefined;
+    for (const citizen of this.citizens) citizen.setSelected(citizen === selected && citizen.room === this.activeRegion);
+    this.ui.setSelectedCitizen(
+      selected ? this.buildCharacterDetail(selected, snapshot) : null,
+      WORLD[this.activeRegion].name,
+      WORLD[this.activeRegion].scene.backdrop ?? null
+    );
+    this.syncCharacterPopup();
+  }
+
+  private updateSpeakingTargets(citizens: Citizen[]) {
+    for (const citizen of citizens) {
+      if (citizen.state !== 'speaking') {
+        citizen.setSpeakingTarget(null);
+        continue;
+      }
+
+      const currentTile = citizen.getTilePosition();
+      const nearest = citizens
+        .filter((entry) => entry.agentId !== citizen.agentId)
+        .map((entry) => {
+          const tile = entry.getTilePosition();
+          return {
+            citizen: entry,
+            distance: Math.abs(tile.x - currentTile.x) + Math.abs(tile.y - currentTile.y),
+            tile,
+          };
+        })
+        .sort((a, b) => a.distance - b.distance)[0];
+
+      citizen.setSpeakingTarget(nearest ? nearest.tile : null);
+    }
+  }
+
+  private renderExitMarkers(ctx: CanvasRenderingContext2D, _delta: number) {
+    const exits = REGION_EXITS[this.activeRegion];
+    const projection = getCurrentProjection();
+    this.exitHotspots = [];
+
+    exits.forEach((exit, index) => {
+      const location = this.scene.getLocation(exit.location);
+      if (!location) return;
+      const point = projectIso(location.x, location.y, 0, projection);
+      const bob = Math.sin(performance.now() / 320 + index * 0.9) * 2.5;
+      const markerY = point.y - 26 + bob;
+      this.exitHotspots.push({
+        ...exit,
+        x: point.x,
+        y: markerY,
+        radius: 16,
+      });
+
+      ctx.save();
+      ctx.translate(point.x, markerY);
+      ctx.fillStyle = 'rgba(17, 14, 26, 0.92)';
+      ctx.strokeStyle = hexAlpha(WORLD[exit.region].palette.primary, 0.9);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(-24, -15, 48, 18, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 3);
+      ctx.lineTo(5, 11);
+      ctx.lineTo(-5, 11);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#fff7ef';
+      ctx.textAlign = 'center';
+      ctx.font = '600 8px "Noto Sans SC", sans-serif';
+      ctx.fillText(exit.label, 0, -3);
+      ctx.fillStyle = hexAlpha(WORLD[exit.region].palette.primary, 0.95);
+      ctx.fillText(WORLD[exit.region].shortName, 0, 7);
+      ctx.restore();
+    });
+  }
+
+  private handleHover(event: MouseEvent) {
+    const world = this.renderer.screenToWorld(event.clientX, event.clientY);
+    const overExit = this.exitHotspots.some((entry) => distanceSq(world.x, world.y, entry.x, entry.y) <= entry.radius * entry.radius);
+    const overCitizen = this.citizens.some((citizen) => citizen.visible && citizen.containsPoint(world.x, world.y));
+    this.renderer.canvas.style.cursor = overExit || overCitizen ? 'pointer' : 'default';
+  }
+
+  private syncCharacterPopup() {
+    if (!this.selectedCitizen || this.selectedCitizen.room !== this.activeRegion) {
+      this.ui.setCharacterPopup(null);
       return;
     }
 
-    const snapshot = this.agents.get(selected.agentId);
-    for (const citizen of this.citizens) citizen.setSelected(citizen === selected && citizen.room === this.activeRegion);
-    panel.classList.remove('is-empty');
-    title.textContent = selected.name;
-    meta.textContent = `${snapshot?.faction ?? selected.role} · ${labelState(selected.state)}`;
-    faction.textContent = snapshot?.faction ?? selected.role;
-    task.textContent = snapshot?.task ?? selected.task ?? '待命中';
-    energy.textContent = `${Math.round((snapshot?.energy ?? selected.energy) * 100)}%`;
-    room.textContent = WORLD[normalizeRegion(snapshot?.region ?? selected.room)].name;
-    setElementBackground(document.getElementById('citizen-art'), selected.avatarPath);
-    setElementBackground(avatarChip, selected.avatarPath);
+    const detail = this.buildCharacterDetail(this.selectedCitizen, this.agents.get(this.selectedCitizen.agentId));
+    const anchor = this.selectedCitizen.getScreenAnchor();
+    const canvasRect = this.renderer.canvas.getBoundingClientRect();
+    const shellRect = this.container.parentElement?.getBoundingClientRect();
+    if (!shellRect) return;
+    const screen = this.renderer.worldToScreen(anchor.x, anchor.y - 18);
+    this.ui.setCharacterPopup({
+      detail,
+      x: canvasRect.left - shellRect.left + screen.x,
+      y: canvasRect.top - shellRect.top + screen.y - 18,
+    });
+  }
+
+  private buildCharacterDetail(citizen: Citizen, snapshot?: CitizenAgentSnapshot): CharacterDetail {
+    const region = normalizeRegion(snapshot?.region ?? citizen.room);
+    return {
+      id: citizen.agentId,
+      name: citizen.name,
+      role: labelRole(snapshot?.role ?? citizen.role),
+      faction: snapshot?.faction ?? '自由共鸣者',
+      status: labelState(citizen.state),
+      room: WORLD[region].name,
+      task: snapshot?.task ?? citizen.task ?? '待命中',
+      energy: `${Math.round((snapshot?.energy ?? citizen.energy) * 100)}%`,
+      avatarPath: citizen.avatarPath,
+      activity: describeActivity(citizen.state),
+    };
+  }
+
+  private applyCameraFocus(preferCitizen: boolean, immediate = false) {
+    const zoom = preferCitizen && this.selectedCitizen && this.selectedCitizen.room === this.activeRegion
+      ? Math.min(1.18, this.settings.cameraZoom + 0.12)
+      : this.settings.cameraZoom;
+
+    if (preferCitizen && this.selectedCitizen && this.selectedCitizen.room === this.activeRegion) {
+      const anchor = this.selectedCitizen.getScreenAnchor();
+      this.renderer.focusCameraOn(anchor.x, anchor.floorY - 40, zoom, immediate);
+      return;
+    }
+
+    const focalLocation = this.scene.getLocation(defaultRegionFocus(this.activeRegion));
+    if (!focalLocation) return;
+    const point = projectIso(focalLocation.x, focalLocation.y, 0, getCurrentProjection());
+    this.renderer.focusCameraOn(point.x, point.y + 24, zoom, immediate);
+  }
+
+  private seedChatHistory() {
+    this.chatHistory = [
+      {
+        id: 'boot-1',
+        speaker: '系统',
+        channel: 'system',
+        text: '交互系统已加载。点击角色查看资料，点击出口切换地区。',
+        mood: 'info',
+        meta: '初始化',
+      },
+      {
+        id: 'boot-2',
+        speaker: '群聊',
+        channel: 'group',
+        text: '角色活动会自动同步到沟通面板与画布气泡。',
+        mood: 'speaking',
+        meta: 'Atelier Feed',
+      },
+    ];
+  }
+
+  private logAgentTransition(previous: CitizenAgentSnapshot | undefined, next: CitizenAgentSnapshot) {
+    const signature = this.createAgentSignature(next);
+    if (this.agentSignatures.get(next.agent) === signature) return;
+    this.agentSignatures.set(next.agent, signature);
+
+    if (!previous) {
+      this.appendChat({
+        id: `${next.agent}-${Date.now()}`,
+        speaker: next.name,
+        channel: 'system',
+        text: `已进入 ${WORLD[normalizeRegion(next.region ?? next.room)].name}`,
+        mood: 'info',
+        meta: '上线',
+      });
+      return;
+    }
+
+    this.appendChat({
+      id: `${next.agent}-${Date.now()}`,
+      speaker: next.name,
+      channel: next.state === 'speaking' ? 'group' : 'direct',
+      text: next.task ?? describeActivity(normalizeState(next.state)),
+      mood: mapMood(normalizeState(next.state)),
+      meta: `${labelState(normalizeState(next.state))} · ${WORLD[normalizeRegion(next.region ?? next.room)].shortName}`,
+    });
+  }
+
+  private logGroupConversation() {
+    const speaking = [...this.agents.values()]
+      .filter((agent) => normalizeState(agent.state) === 'speaking' && normalizeRegion(agent.region ?? agent.room) === this.activeRegion);
+    if (speaking.length < 2) return;
+
+    const signature = speaking.map((agent) => `${agent.agent}:${agent.task ?? ''}`).sort().join('|');
+    const lastEntry = this.chatHistory[0];
+    if (lastEntry?.id === signature) return;
+
+    this.appendChat({
+      id: signature,
+      speaker: '群聊',
+      channel: 'group',
+      text: `${speaking.map((agent) => agent.name).join(' / ')} 正在同步本地区议题`,
+      mood: 'speaking',
+      meta: `${WORLD[this.activeRegion].shortName} 群聊`,
+    });
+  }
+
+  private handleSignalEvent(event: { agentId?: string; action?: { type: string; [key: string]: unknown } }) {
+    const agentId = event.agentId ?? '';
+    const agent = agentId ? this.agents.get(agentId) : undefined;
+    const actionLabel = typeof event.action?.type === 'string' ? event.action.type : 'event';
+    this.appendChat({
+      id: `event-${agentId}-${Date.now()}`,
+      speaker: agent?.name ?? '系统',
+      channel: 'system',
+      text: `收到动作事件：${actionLabel}`,
+      mood: 'info',
+      meta: 'Signal',
+    });
+  }
+
+  private appendChat(entry: ChatEntry) {
+    this.chatHistory = [entry, ...this.chatHistory].slice(0, 16);
+    this.ui.setChatHistory(this.chatHistory);
+  }
+
+  private createAgentSignature(agent: CitizenAgentSnapshot) {
+    return [
+      normalizeState(agent.state),
+      agent.task ?? '',
+      normalizeRegion(agent.region ?? agent.room),
+      Math.round((agent.energy ?? 1) * 100),
+    ].join('|');
   }
 }
 
@@ -425,6 +747,52 @@ function labelState(state: AgentState): string {
     error: '异常',
     offline: '离线',
   }[state];
+}
+
+function labelRole(role: string): string {
+  return {
+    owner: '主理人',
+    sentinel: '守望者',
+    strategist: '策士',
+    marshal: '统帅',
+    researcher: '研究员',
+    curator: '馆藏官',
+    designer: '构想师',
+    envoy: '特使',
+    scout: '侦察员',
+    captain: '舰长',
+    guest: '访客',
+    member: '共鸣者',
+  }[role] ?? role;
+}
+
+function describeActivity(state: AgentState): string {
+  return {
+    working: '桌前处理事务',
+    idle: '缓慢巡游与观察',
+    thinking: '暂停并整理思路',
+    sleeping: '低功耗静默',
+    speaking: '面向目标交流',
+    error: '等待处理异常',
+    offline: '未接入同步网',
+  }[state];
+}
+
+function mapMood(state: AgentState): ChatEntry['mood'] {
+  if (state === 'working') return 'working';
+  if (state === 'thinking') return 'thinking';
+  if (state === 'speaking') return 'speaking';
+  if (state === 'error') return 'error';
+  return 'info';
+}
+
+function defaultRegionFocus(region: RegionId): string {
+  return {
+    huanglong: 'huanglong_city_center',
+    blackshores: 'blackshores_center',
+    rinascita: 'rinascita_center',
+    frontier: 'frontier_center',
+  }[region];
 }
 
 function pickFromArray<T>(items: T[], seed: string, offset: number): T | undefined {
@@ -657,6 +1025,10 @@ function setElementBackground(element: HTMLElement | null, src: string | null) {
   element.style.backgroundImage = src
     ? `linear-gradient(180deg, rgba(8, 12, 28, 0.1), rgba(8, 12, 28, 0.85)), url("${src}")`
     : 'none';
+}
+
+function distanceSq(ax: number, ay: number, bx: number, by: number) {
+  return (ax - bx) * (ax - bx) + (ay - by) * (ay - by);
 }
 
 async function init() {

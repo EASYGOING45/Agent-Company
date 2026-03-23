@@ -9,28 +9,52 @@ export class Camera {
 
   private targetX = 0;
   private targetY = 0;
+  private targetZoom = 1;
   private smoothSpeed = 5;
+  private zoomSmoothSpeed = 6;
 
-  setTarget(x: number, y: number) {
+  setTarget(x: number, y: number, immediate = false) {
     this.targetX = x;
     this.targetY = y;
+    if (immediate) {
+      this.x = x;
+      this.y = y;
+    }
   }
 
-  update() {
-    // 平滑跟随
-    this.x += (this.targetX - this.x) * (1 - Math.exp(-this.smoothSpeed * 0.016));
-    this.y += (this.targetY - this.y) * (1 - Math.exp(-this.smoothSpeed * 0.016));
+  setZoom(zoom: number, immediate = false) {
+    this.targetZoom = zoom;
+    if (immediate) {
+      this.zoom = zoom;
+    }
+  }
+
+  focusOn(worldX: number, worldY: number, viewportWidth: number, viewportHeight: number, zoom = this.targetZoom, immediate = false) {
+    this.setZoom(zoom, immediate);
+    this.setTarget(
+      worldX - viewportWidth / (2 * zoom),
+      worldY - viewportHeight / (2 * zoom),
+      immediate
+    );
+  }
+
+  update(delta = 0.016) {
+    const moveDamping = 1 - Math.exp(-this.smoothSpeed * delta);
+    const zoomDamping = 1 - Math.exp(-this.zoomSmoothSpeed * delta);
+    this.x += (this.targetX - this.x) * moveDamping;
+    this.y += (this.targetY - this.y) * moveDamping;
+    this.zoom += (this.targetZoom - this.zoom) * zoomDamping;
   }
 
   apply(ctx: CanvasRenderingContext2D) {
-    ctx.translate(-this.x, -this.y);
     ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-this.x, -this.y);
   }
 
   screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
     return {
-      x: screenX + this.x,
-      y: screenY + this.y,
+      x: screenX / this.zoom + this.x,
+      y: screenY / this.zoom + this.y,
     };
   }
 

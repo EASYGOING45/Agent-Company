@@ -81,6 +81,9 @@ export class Renderer {
   private lastTime = 0;
   private scale: number;
   private crtPhase = 0;
+  private ambientFx = true;
+  private transitionAmount = 0;
+  private transitionLabel = '';
 
   constructor(container: HTMLElement, width: number, height: number, scale = 2) {
     this.scale = scale;
@@ -139,9 +142,33 @@ export class Renderer {
 
   screenToWorld(screenX: number, screenY: number) {
     const rect = this.canvas.getBoundingClientRect();
-    const canvasX = (screenX - rect.left) / this.scale;
-    const canvasY = (screenY - rect.top) / this.scale;
+    const canvasX = ((screenX - rect.left) / rect.width) * this.canvas.width;
+    const canvasY = ((screenY - rect.top) / rect.height) * this.canvas.height;
     return this.camera.screenToWorld(canvasX, canvasY);
+  }
+
+  worldToScreen(worldX: number, worldY: number) {
+    const point = this.camera.worldToScreen(worldX, worldY);
+    return {
+      x: point.x * this.scale,
+      y: point.y * this.scale,
+    };
+  }
+
+  focusCameraOn(worldX: number, worldY: number, zoom = this.camera.zoom, immediate = false) {
+    this.camera.focusOn(worldX, worldY, this.canvas.width, this.canvas.height, zoom, immediate);
+  }
+
+  setAmbientFx(enabled: boolean) {
+    this.ambientFx = enabled;
+  }
+
+  async playTransition(label: string, job: () => Promise<void> | void) {
+    this.transitionLabel = label;
+    await this.tweenTransition(1);
+    await job();
+    await this.tweenTransition(0);
+    this.transitionLabel = '';
   }
 
   private render(delta: number) {
@@ -155,7 +182,7 @@ export class Renderer {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     this.drawAmbientBackdrop(ctx, canvas.width, canvas.height);
 
-    this.camera.update();
+    this.camera.update(delta);
     this.camera.apply(ctx);
 
     for (const layer of this.layers) {
@@ -166,9 +193,11 @@ export class Renderer {
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.drawCrtOverlay(ctx, canvas.width, canvas.height);
+    this.drawTransitionOverlay(ctx, canvas.width, canvas.height);
   }
 
   private drawAmbientBackdrop(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    if (!this.ambientFx) return;
     const topGlow = ctx.createRadialGradient(width * 0.18, height * 0.08, 12, width * 0.18, height * 0.08, width * 0.42);
     topGlow.addColorStop(0, 'rgba(255, 210, 128, 0.08)');
     topGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -183,6 +212,7 @@ export class Renderer {
   }
 
   private drawCrtOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    if (!this.ambientFx) return;
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
     for (let y = 0; y < height; y += 3) {
@@ -207,4 +237,65 @@ export class Renderer {
     ctx.strokeRect(1.5, 1.5, width - 3, height - 3);
     ctx.restore();
   }
+
+  private drawTransitionOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    if (this.transitionAmount <= 0.001) return;
+    ctx.save();
+    const eased = easeOutCubic(this.transitionAmount);
+    const overlay = ctx.createLinearGradient(0, 0, width, height);
+    overlay.addColorStop(0, `rgba(16, 9, 18, ${(0.46 * eased).toFixed(3)})`);
+    overlay.addColorStop(1, `rgba(7, 10, 18, ${(0.82 * eased).toFixed(3)})`);
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = `rgba(243, 197, 107, ${(0.65 * eased).toFixed(3)})`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(8, 8, width - 16, height - 16);
+
+    if (this.transitionLabel) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = `rgba(255, 245, 233, ${(0.92 * eased).toFixed(3)})`;
+      ctx.font = '700 12px "Noto Sans SC", sans-serif';
+      ctx.fillText(`正在前往 ${this.transitionLabel}`, width / 2, height / 2 - 4);
+      ctx.font = '500 10px "Noto Sans SC", sans-serif';
+      ctx.fillStyle = `rgba(216, 210, 226, ${(0.78 * eased).toFixed(3)})`;
+      ctx.fillText('Room transition engaged', width / 2, height / 2 + 16);
+    }
+    ctx.restore();
+  }
+
+  private tweenTransition(target: number, duration = 220) {
+    const start = this.transitionAmount;
+    const delta = target - start;
+    if (Math.abs(delta) < 0.001) {
+      this.transitionAmount = target;
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      const startTime = performance.now();
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - startTime) / duration);
+        const eased = easeInOutCubic(progress);
+        this.transitionAmount = start + delta * eased;
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          this.transitionAmount = target;
+          resolve();
+        }
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+}
+
+function easeInOutCubic(value: number) {
+  return value < 0.5
+    ? 4 * value * value * value
+    : 1 - Math.pow(-2 * value + 2, 3) / 2;
+}
+
+function easeOutCubic(value: number) {
+  return 1 - Math.pow(1 - value, 3);
 }
