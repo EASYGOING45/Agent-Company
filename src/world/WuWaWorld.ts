@@ -110,7 +110,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'researcher',
     faction: '稷廷遗址考察队',
     region: 'frontier',
-    avatarPath: '/assets/avatars/xiangliyao.png',
+    avatarPath: '/assets/portraits/xiangliyao.webp',
   },
   {
     agentId: 'colletta',
@@ -154,7 +154,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'captain',
     faction: '黑海岸',
     region: 'blackshores',
-    avatarPath: '/assets/avatars/brant.png',
+    avatarPath: '/assets/portraits/brant.webp',
   },
 ];
 
