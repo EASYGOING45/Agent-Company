@@ -21,11 +21,10 @@ export interface CitizenConfig {
   name: string;
   sprite: string;
   position: string;
+  avatarPath?: string;
   npc?: boolean;
   color?: string;
   role?: string;
-  portrait?: string;
-  portraitFocus?: string;
 }
 
 export interface MovementContext {
@@ -49,8 +48,7 @@ export class Citizen {
   readonly spriteSheet: SpriteSheet;
   readonly color: string;
   readonly role: string;
-  readonly portrait: string | null;
-  readonly portraitFocus: string;
+  readonly avatarPath: string | null;
 
   x = 0;
   y = 0;
@@ -69,8 +67,8 @@ export class Citizen {
   private tileWidth: number;
   private tileHeight: number;
   private facing: 'up' | 'down' | 'left' | 'right' = 'down';
-  private portraitImage: HTMLImageElement | null = null;
-  private portraitLoaded = false;
+  private avatarImage: HTMLImageElement | null = null;
+  private avatarLoaded = false;
 
   constructor(config: CitizenConfig, spriteSheet: SpriteSheet, tileWidth: number, tileHeight: number) {
     this.agentId = config.agentId;
@@ -81,11 +79,10 @@ export class Citizen {
     this.tileHeight = tileHeight;
     this.color = config.color ?? '#64d5ff';
     this.role = config.role ?? 'member';
-    this.portrait = config.portrait ?? null;
-    this.portraitFocus = config.portraitFocus ?? 'center';
+    this.avatarPath = config.avatarPath ?? null;
     this.anchorLocation = config.position;
     this.room = inferRoomId(config.position);
-    this.loadPortrait();
+    this.loadAvatar();
     this.animator.play('idle_down');
   }
 
@@ -166,8 +163,9 @@ export class Citizen {
     if (!this.visible) return;
 
     this.drawAura(ctx);
-    this.animator.draw(ctx, this.x, this.y);
-    this.drawPortraitBadge(ctx);
+    if (!this.drawAvatar(ctx)) {
+      this.animator.draw(ctx, this.x, this.y);
+    }
     this.drawEnergyArc(ctx);
 
     ctx.save();
@@ -248,15 +246,21 @@ export class Citizen {
     this.animator.play(mapped);
   }
 
-  private loadPortrait() {
-    if (!this.portrait) return;
+  private loadAvatar() {
+    if (!this.avatarPath) return;
 
     const image = new Image();
     image.onload = () => {
-      this.portraitLoaded = true;
-      this.portraitImage = image;
+      this.avatarLoaded = true;
+      this.avatarImage = image;
     };
-    image.src = this.portrait;
+    image.onerror = () => {
+      this.avatarLoaded = false;
+      this.avatarImage = null;
+    };
+    image.decoding = 'async';
+    image.src = this.avatarPath;
+    void image.decode?.().catch(() => undefined);
   }
 
   private drawAura(ctx: CanvasRenderingContext2D) {
@@ -276,44 +280,15 @@ export class Citizen {
     ctx.restore();
   }
 
-  private drawPortraitBadge(ctx: CanvasRenderingContext2D) {
-    const badgeX = this.x + this.tileWidth / 2 - 20;
-    const badgeY = this.y - 22;
+  private drawAvatar(ctx: CanvasRenderingContext2D): boolean {
+    if (!this.avatarLoaded || !this.avatarImage) return false;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(badgeX, badgeY, 10, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(8, 12, 28, 0.92)';
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = this.color;
-    ctx.stroke();
-
-    if (this.portraitLoaded && this.portraitImage) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(badgeX, badgeY, 8.5, 0, Math.PI * 2);
-      ctx.clip();
-      const source = coverCrop(this.portraitImage, 17, 17, this.portraitFocus);
-      ctx.drawImage(
-        this.portraitImage,
-        source.sx,
-        source.sy,
-        source.sw,
-        source.sh,
-        badgeX - 8.5,
-        badgeY - 8.5,
-        17,
-        17
-      );
-      ctx.restore();
-    } else {
-      ctx.fillStyle = hexToRgba(this.color, 0.24);
-      ctx.beginPath();
-      ctx.arc(badgeX, badgeY, 8, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
+    this.spriteSheet.drawAvatarFallback(ctx, this.avatarImage, this.x, this.y, {
+      size: 36,
+      borderColor: this.color,
+      backgroundColor: 'rgba(8, 12, 28, 0.94)',
+    });
+    return true;
   }
 
   private drawEnergyArc(ctx: CanvasRenderingContext2D) {
@@ -359,26 +334,6 @@ function inferRoomId(location: string): string {
 
 function easeInOut(value: number): number {
   return value * value * (3 - 2 * value);
-}
-
-function coverCrop(image: HTMLImageElement, targetWidth: number, targetHeight: number, focus: string) {
-  const imageRatio = image.width / image.height;
-  const targetRatio = targetWidth / targetHeight;
-
-  let sw = image.width;
-  let sh = image.height;
-  if (imageRatio > targetRatio) {
-    sw = image.height * targetRatio;
-  } else {
-    sh = image.width / targetRatio;
-  }
-
-  const focusX = focus.includes('left') ? 0.3 : focus.includes('right') ? 0.7 : 0.5;
-  const focusY = focus.includes('top') ? 0.3 : focus.includes('bottom') ? 0.7 : 0.5;
-  const sx = Math.max(0, Math.min(image.width - sw, image.width * focusX - sw / 2));
-  const sy = Math.max(0, Math.min(image.height - sh, image.height * focusY - sh / 2));
-
-  return { sx, sy, sw, sh };
 }
 
 function hexToRgba(hex: string, alpha: number): string {

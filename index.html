@@ -261,17 +261,40 @@
     .citizen-art {
       width: 100%;
       aspect-ratio: 1 / 1;
-      border-radius: 16px;
+      border-radius: 24px;
       border: 1px solid rgba(255,255,255,0.08);
       background-size: cover;
       background-position: center;
       background-color: rgba(8, 12, 28, 0.78);
       overflow: hidden;
+      margin-bottom: 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .citizen-summary {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
       margin-bottom: 0.9rem;
+    }
+    .citizen-avatar-chip {
+      width: 56px;
+      height: 56px;
+      flex: none;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
+        rgba(8, 12, 28, 0.88);
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+    }
+    .citizen-copy {
+      min-width: 0;
     }
     .citizen-faction {
       display: inline-flex;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.55rem;
       padding: 0.28rem 0.6rem;
       border-radius: 999px;
       border: 1px solid var(--line);
@@ -279,6 +302,12 @@
       font-size: 0.75rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+    #citizen-name {
+      margin-bottom: 0.2rem;
+    }
+    #citizen-meta {
+      font-size: 0.88rem;
     }
     .sidebar-card p, #agents-info, .detail-list div {
       color: var(--muted);
@@ -292,7 +321,9 @@
     .detail-list {
       display: grid;
       gap: 0.65rem;
-      margin-top: 0.8rem;
+      margin-top: 0.2rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
     .detail-label {
       color: rgba(234, 243, 255, 0.45);
@@ -391,9 +422,14 @@
       </section>
       <section class="sidebar-card is-empty" id="citizen-card">
         <div class="citizen-art" id="citizen-art"></div>
-        <div class="citizen-faction" id="citizen-faction">共鸣者档案</div>
-        <h3 id="citizen-name">选择共鸣者</h3>
-        <p id="citizen-meta">点击画布中的角色查看详情</p>
+        <div class="citizen-summary">
+          <div class="citizen-avatar-chip" id="citizen-avatar-chip"></div>
+          <div class="citizen-copy">
+            <div class="citizen-faction" id="citizen-faction">共鸣者档案</div>
+            <h3 id="citizen-name">选择共鸣者</h3>
+            <p id="citizen-meta">点击画布中的角色查看详情</p>
+          </div>
+        </div>
         <div class="detail-list">
           <div>
             <div class="detail-label">当前任务</div>

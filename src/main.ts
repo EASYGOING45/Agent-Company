@@ -342,7 +342,8 @@ class WuWaVerse {
     const energy = document.getElementById('citizen-energy');
     const room = document.getElementById('citizen-room');
     const faction = document.getElementById('citizen-faction');
-    if (!panel || !title || !meta || !task || !energy || !room || !faction) return;
+    const avatarChip = document.getElementById('citizen-avatar-chip');
+    if (!panel || !title || !meta || !task || !energy || !room || !faction || !avatarChip) return;
 
     const selected = this.selectedCitizen;
     if (!selected) {
@@ -354,6 +355,7 @@ class WuWaVerse {
       energy.textContent = '--';
       room.textContent = WORLD[this.activeRegion].name;
       setElementBackground(document.getElementById('citizen-art'), WORLD[this.activeRegion].scene.backdrop ?? null);
+      setElementBackground(avatarChip, null);
       return;
     }
 
@@ -365,7 +367,8 @@ class WuWaVerse {
     task.textContent = snapshot?.task ?? selected.task ?? '待命中';
     energy.textContent = `${Math.round((snapshot?.energy ?? selected.energy) * 100)}%`;
     room.textContent = WORLD[normalizeRegion(snapshot?.region ?? selected.room)].name;
-    setElementBackground(document.getElementById('citizen-art'), selected.portrait);
+    setElementBackground(document.getElementById('citizen-art'), selected.avatarPath);
+    setElementBackground(avatarChip, selected.avatarPath);
   }
 }
 
@@ -558,7 +561,9 @@ function drawFrame(
 
 function setElementBackground(element: HTMLElement | null, src: string | null) {
   if (!element) return;
-  element.style.backgroundImage = src ? `linear-gradient(180deg, rgba(8, 12, 28, 0.1), rgba(8, 12, 28, 0.85)), url("${src}")` : 'none';
+  element.style.backgroundImage = src
+    ? `linear-gradient(180deg, rgba(8, 12, 28, 0.1), rgba(8, 12, 28, 0.85)), url("${src}")`
+    : 'none';
 }
 
 async function init() {

@@ -35,12 +35,11 @@ export interface CitizenSeed {
   name: string;
   sprite: string;
   position: string;
+  avatarPath: string;
   color: string;
   role: string;
   faction: string;
   region: RegionId;
-  portrait: string;
-  portraitFocus?: string;
 }
 
 export const WUWA_COLORS = {
@@ -67,8 +66,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'owner',
     faction: '隐海修会',
     region: 'rinascita',
-    portrait: '/assets/portraits/phoebe.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/phoebe-avatar.png',
   },
   {
     agentId: 'jinxi',
@@ -79,8 +77,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'sentinel',
     faction: '今州令尹府',
     region: 'huanglong',
-    portrait: '/assets/portraits/jinxi.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/jinxi.png',
   },
   {
     agentId: 'changli',
@@ -91,8 +88,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'strategist',
     faction: '今州令尹府',
     region: 'huanglong',
-    portrait: '/assets/portraits/changli.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/changli.png',
   },
   {
     agentId: 'jiyan',
@@ -103,8 +99,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'marshal',
     faction: '夜归军',
     region: 'huanglong',
-    portrait: '/assets/portraits/jiyan.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/jiyan.png',
   },
   {
     agentId: 'xiangliyao',
@@ -115,8 +110,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'researcher',
     faction: '稷廷遗址考察队',
     region: 'frontier',
-    portrait: '/assets/portraits/xiangliyao.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/xiangliyao.png',
   },
   {
     agentId: 'colletta',
@@ -127,8 +121,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'curator',
     faction: '黑海岸',
     region: 'blackshores',
-    portrait: '/assets/portraits/colletta.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/colletta.png',
   },
   {
     agentId: 'roccia',
@@ -139,8 +132,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'designer',
     faction: '斐撒烈家族',
     region: 'blackshores',
-    portrait: '/assets/portraits/roccia.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/roccia.png',
   },
   {
     agentId: 'zani',
@@ -151,8 +143,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'envoy',
     faction: '斐撒烈家族',
     region: 'rinascita',
-    portrait: '/assets/portraits/zani.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/zani.png',
   },
   {
     agentId: 'brant',
@@ -163,8 +154,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     role: 'captain',
     faction: '黑海岸',
     region: 'blackshores',
-    portrait: '/assets/portraits/brant.webp',
-    portraitFocus: 'center top',
+    avatarPath: '/assets/avatars/brant.png',
   },
 ];
 

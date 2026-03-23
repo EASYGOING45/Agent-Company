@@ -73,4 +73,29 @@ export class SpriteSheet {
       offsetY: animation.offsetY ?? this.config.defaultOffsetY ?? 0,
     };
   }
+
+  drawAvatarFallback(
+    ctx: CanvasRenderingContext2D,
+    avatar: HTMLImageElement,
+    x: number,
+    y: number,
+    options: { size?: number; borderColor?: string; backgroundColor?: string } = {}
+  ) {
+    const size = options.size ?? 36;
+    const radius = Math.max(10, Math.round(size * 0.28));
+    const drawX = x + (32 - size) / 2;
+    const drawY = y + (32 - size) / 2 - 4;
+
+    ctx.save();
+    ctx.fillStyle = options.backgroundColor ?? 'rgba(8, 12, 28, 0.92)';
+    ctx.strokeStyle = options.borderColor ?? 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(drawX, drawY, size, size, radius);
+    ctx.fill();
+    ctx.stroke();
+    ctx.clip();
+    ctx.drawImage(avatar, drawX, drawY, size, size);
+    ctx.restore();
+  }
 }
