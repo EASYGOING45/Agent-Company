@@ -1,70 +1,112 @@
-# CodeX 当前工作上下文 - 鸣潮元宇宙重构
+# Agent-Company Art Asset & Visual Polish Task
 
-**更新时间**: 2026-03-23 11:54
-**当前任务**: 重构代码以使用新头像，改进视觉风格
-**Agent**: Codex (OpenAI)
+## Goal
+Enhance visual quality and find more art assets, closely following Miniverse's UI and effects.
 
----
+## Miniverse Reference Analysis
+From screenshot study:
+- Isometric pixel art rooms with brick walls
+- Cozy indoor environments with furniture
+- Small character sprites with name labels
+- Warm lighting and atmospheric effects
+- Clean UI overlay on the 3D scene
+- Speech bubbles for communication
+- Status indicators (idle, working, thinking)
 
-## ✅ 已完成 - 素材准备
+## Current State
+- Isometric projection implemented
+- Basic pixel tiles (floor, wall)
+- Small character sprites
+- 9 characters with their colors
 
-**角色头像已就绪** (public/assets/avatars/):
-- ✅ jinxi.png - 今汐 (青绿色)
-- ✅ changli.png - 长离 (橙红色)
-- ✅ jiyan.png - 忌炎 (青绿色)
-- ✅ xiangliyao.png - 相里要 (蓝色)
-- ✅ colletta.png - 珂莱塔 (紫色)
-- ✅ roccia.png - 洛可可 (粉色)
-- ✅ zani.png - 赞妮 (金黄色)
-- ✅ brant.png - 布兰特 (天蓝色)
-- ✅ phoebe-avatar.png - 菲比 (金色)
+## Required Improvements
 
----
+### 1. Art Assets Enhancement
+**Character Sprites:**
+- Create/generate pixel art sprites for all 9 characters
+  - phoebe (gold/yellow)
+  - jinxi (teal/cyan)
+  - changli (orange/red)
+  - jiyan (green)
+  - xiangliyao (blue)
+  - colletta (purple)
+  - roccia (pink)
+  - zani (yellow/gold)
+  - brant (light blue)
+- Each sprite: 16x16 or 24x24 pixels
+- Style: 8-bit/16-bit pixel art
+- Animations: idle (2-3 frames), walk (4 frames)
 
-## 🎯 待完成任务
+**Environment Assets:**
+- Better floor tiles (wood, carpet, stone variations)
+- Wall tiles (brick pattern, wood panel, stone)
+- Furniture sprites:
+  - Desk (wood, metal, tech)
+  - Chair (office, wooden, futuristic)
+  - Bookshelf (wood, metal)
+  - Plant (pot, size variations)
+  - Lamp (desk lamp, floor lamp)
+  - Window (with curtains, without)
+  - Door (wood, metal, tech)
+  - Rug/Carpet (various patterns)
+  - Computer/monitor
+  - Couch/sofa
+  - Table (coffee table, dining table)
 
-### 1. 重构角色系统 (src/citizens/Citizen.ts)
-- 修改Citizen类，支持使用图片头像
-- 在渲染时绘制角色头像而非Canvas像素图形
-- 保持现有的动画和移动逻辑
+**Decorative Elements:**
+- Wall decorations (posters, paintings)
+- Floor items (papers, books)
+- Lighting effects (glow, shadows)
 
-### 2. 更新角色配置 (src/world/WuWaWorld.ts)
-- 更新INITIAL_CITIZENS，添加头像路径配置
-- 确保每个角色都有对应的头像文件映射
+### 2. Visual Effects
+- Add subtle lighting/shadows
+- Character glow/outline when selected
+- Smooth movement animations
+- Speech bubbles for communication
+- Thought bubbles for "thinking" state
+- Particle effects (optional)
 
-### 3. 改进UI (index.html)
-- 在角色卡片中显示头像图片
-- 改进整体视觉风格，参考Miniverse
-- 添加更精美的角色详情展示
+### 3. UI Polish
+- Better room labels
+- Cleaner character nameplates
+- Status indicators (icons or colors)
+- Region/world selector styling
+- Consistent color scheme per region
 
-### 4. 测试和构建
-- 确保代码能正常编译
-- 本地测试运行
-- 构建并提交
+### 4. Scene Layout Improvements
+- More detailed room layouts
+- Better furniture placement
+- Walkable paths visualization
+- Cozy corners and gathering spots
 
----
+## Asset Sources to Try
+1. **Generate with AI** - Use pixel art generators
+2. **OpenGameArt.org** - Free game assets
+3. **itch.io** - Free/cheap asset packs
+4. **CraftPix.net** - Free 2D game assets
+5. **Create procedurally** - Generate pixel patterns
 
-## 📁 项目结构
+## Technical Notes
+- Keep isometric projection
+- Maintain 32x32 base tile size (or adjust for pixel art)
+- Use PNG format with transparency
+- Optimize for web (small file sizes)
+- Keep consistent pixel art style
 
-```
-Agent-Company/
-├── public/assets/avatars/    # ✅ 头像已就绪
-├── src/citizens/Citizen.ts   # 🔄 需要重构
-├── src/world/WuWaWorld.ts    # 🔄 需要更新配置
-├── index.html                # 🔄 需要改进UI
-└── ...
-```
+## Deliverables
+1. New/replace character sprites (pixel art)
+2. Expanded environment tile set
+3. Furniture and decoration sprites
+4. Visual effects (shadows, glow, etc.)
+5. UI polish and improvements
+6. Updated scenes with better layouts
+7. Build, test, and deploy
+8. Commit: "feat: enhance art assets and visual polish"
 
----
-
-## 🎮 Miniverse参考要点
-
-从 /tmp/miniverse/ 学习:
-- 简洁的像素风格角色渲染
-- 清晰的地图和房间切换
-- 平滑的动画过渡
-- 直观的UI设计
-
----
-
-**下一步**: 重构Citizen.ts以支持图片头像！
+## Success Criteria
+- All 9 characters have unique pixel art sprites
+- Environment has varied, detailed tiles
+- Furniture makes rooms look lived-in
+- Visual effects add atmosphere
+- UI is clean and readable
+- Performance remains good
