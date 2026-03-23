@@ -1,7 +1,20 @@
 name = "agent-company"
 compatibility_date = "2025-01-01"
-pages_build_output_dir = "."
+main = "workers/worker.ts"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
 kv_namespaces = [
   { binding = "AGENTS_KV", id = "e636e8cc7a5a452094d43217d0f69f3a" }
 ]
+
+[durable_objects]
+bindings = [
+  { name = "AGENT_WORLD", class_name = "AgentWorldDurableObject" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentWorldDurableObject"]

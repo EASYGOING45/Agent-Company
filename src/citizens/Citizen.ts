@@ -54,7 +54,7 @@ export class Citizen {
   task: string | null = null;
   energy = 1;
   visible = true;
-  room = 'lobby';
+  room = 'rinascita';
   anchorLocation = '';
   currentTargetLocation: string | null = null;
 
@@ -257,10 +257,10 @@ export class CitizenLayer implements RenderLayer {
 }
 
 function inferRoomId(location: string): string {
-  if (location.startsWith('meeting_')) return 'meeting';
-  if (location.startsWith('lounge_')) return 'lounge';
-  if (location.startsWith('training_')) return 'training';
-  return 'lobby';
+  if (location.startsWith('huanglong_')) return 'huanglong';
+  if (location.startsWith('blackshores_')) return 'blackshores';
+  if (location.startsWith('rinascita_')) return 'rinascita';
+  return 'frontier';
 }
 
 function easeInOut(value: number): number {

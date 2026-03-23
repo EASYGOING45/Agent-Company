@@ -11,19 +11,31 @@ import { SpeechBubbleSystem } from './effects/SpeechBubble.ts';
 import { Signal, type AgentStatus } from './signal/Signal.ts';
 import {
   INITIAL_CITIZENS,
-  ROOM_ORDER,
+  REGION_ORDER,
   createWorldDefinition,
-  type RoomId,
+  inferRegionFromLocation,
+  type RegionId,
 } from './world/WuWaWorld.ts';
 import type { SpriteSheetConfig } from './sprites/types.ts';
 
 const WORLD = createWorldDefinition();
-const SPRITE_CONFIGS: Record<string, SpriteSheetConfig> = {
-  phoebe: createWuWaSpriteConfig('#f3c56b', '#fff1c8', '#35220e'),
-  claude: createWuWaSpriteConfig('#67d4ff', '#d9f5ff', '#0c2840'),
-  gemini: createWuWaSpriteConfig('#7fe9c1', '#ecfff7', '#0f2f23'),
-  codex: createWuWaSpriteConfig('#a696ff', '#efe9ff', '#24184d'),
+const SPRITE_PALETTES: Record<string, [string, string, string]> = {
+  phoebe: ['#f3c56b', '#fff1c8', '#35220e'],
+  jinxi: ['#7fe4d6', '#ecfffb', '#10342c'],
+  changli: ['#ff9f72', '#ffe7d6', '#4a1f11'],
+  jiyan: ['#87f0c7', '#edfff7', '#143126'],
+  xiangliyao: ['#7fc2ff', '#eaf6ff', '#132740'],
+  colletta: ['#b79cff', '#f3ecff', '#261a46'],
+  roccia: ['#ffb4d8', '#fff0f7', '#4a1e31'],
+  zani: ['#ffd07a', '#fff5da', '#493113'],
+  brant: ['#72c3ff', '#e5f6ff', '#13314a'],
 };
+const SPRITE_CONFIGS = Object.fromEntries(
+  Object.entries(SPRITE_PALETTES).map(([sprite, [primary, secondary, shadow]]) => [
+    sprite,
+    createWuWaSpriteConfig(primary, secondary, shadow),
+  ])
+) as Record<string, SpriteSheetConfig>;
 
 type CitizenAgentSnapshot = AgentStatus & { agent: string };
 
@@ -38,13 +50,17 @@ class WuWaVerse {
   private particleTimers = new Map<string, number>();
   private idleTimers = new Map<string, number>();
   private agents = new Map<string, CitizenAgentSnapshot>();
-  private activeRoom: RoomId = 'lobby';
+  private activeRegion: RegionId = 'rinascita';
   private selectedCitizen: Citizen | null = null;
 
-  constructor(private container: HTMLElement, wsUrl: string) {
+  constructor(private container: HTMLElement, config: { wsUrl: string; agentsUrl: string; heartbeatUrl: string }) {
     this.renderer = new Renderer(container, 512, 384, 2);
-    this.scene = new Scene(WORLD[this.activeRoom].scene);
-    this.signal = new Signal({ url: wsUrl });
+    this.scene = new Scene(WORLD[this.activeRegion].scene);
+    this.signal = new Signal({
+      url: config.wsUrl,
+      agentsUrl: config.agentsUrl,
+      heartbeatUrl: config.heartbeatUrl,
+    });
 
     this.renderer.addLayer(this.scene);
     this.renderer.addLayer({
@@ -59,7 +75,7 @@ class WuWaVerse {
 
     this.renderer.canvas.addEventListener('click', (event) => this.handleClick(event));
     this.signal.onUpdate((agents) => this.handleSignalUpdate(agents as CitizenAgentSnapshot[]));
-    wireRoomButtons((room) => void this.switchRoom(room));
+    wireRegionButtons((region) => void this.switchRegion(region));
   }
 
   async start() {
@@ -73,29 +89,32 @@ class WuWaVerse {
       await sheet.load();
 
       const citizen = new Citizen(config, sheet, this.scene.config.tileWidth, this.scene.config.tileHeight);
-      const initialRoom = inferRoomFromLocation(config.position);
-      citizen.setRoom(initialRoom);
-      const initialScene = WORLD[initialRoom].scene;
+      const initialRegion = config.region ?? inferRegionFromLocation(config.position);
+      citizen.setRoom(initialRegion);
+      const initialScene = WORLD[initialRegion].scene;
       const location = initialScene.locations[config.position];
       if (location) {
         citizen.setTilePosition(location.x, location.y);
       }
+
       this.citizens.push(citizen);
       this.agents.set(config.agentId, {
         id: config.agentId,
         agent: config.agentId,
         name: config.name,
         state: 'idle',
-        task: '待命中',
+        task: `${config.faction} 待命`,
         energy: 1,
         color: config.color,
-        room: initialRoom,
+        room: initialRegion,
+        region: initialRegion,
         role: config.role,
+        faction: config.faction,
       });
     }
 
     this.citizenLayer.setCitizens(this.citizens);
-    this.refreshRoomUi();
+    this.refreshRegionUi();
     this.refreshAgentUi();
     this.signal.start();
     this.renderer.start();
@@ -108,14 +127,14 @@ class WuWaVerse {
 
   private updateCitizens(delta: number) {
     const blockedByCitizen = new Map<string, string>();
-    for (const citizen of this.citizens.filter((entry) => entry.visible && entry.room === this.activeRoom)) {
+    for (const citizen of this.citizens.filter((entry) => entry.visible && entry.room === this.activeRegion)) {
       for (const reserved of citizen.getReservedTiles()) {
         blockedByCitizen.set(reserved, citizen.agentId);
       }
     }
 
     for (const citizen of this.citizens) {
-      citizen.visible = citizen.state !== 'offline' && citizen.room === this.activeRoom;
+      citizen.visible = citizen.state !== 'offline' && citizen.room === this.activeRegion;
       this.routeCitizen(citizen, delta, blockedByCitizen);
       const blockedTiles = new Set<string>();
       for (const [tile, owner] of blockedByCitizen) {
@@ -128,13 +147,13 @@ class WuWaVerse {
 
   private routeCitizen(citizen: Citizen, delta: number, blockedByCitizen: Map<string, string>) {
     const snapshot = this.agents.get(citizen.agentId);
-    const room = this.resolveDesiredRoom(citizen, snapshot);
-    if (room !== citizen.room) {
-      citizen.setRoom(room);
+    const region = this.resolveDesiredRegion(citizen, snapshot);
+    if (region !== citizen.room) {
+      citizen.setRoom(region);
       citizen.clearTarget();
     }
 
-    if (citizen.room !== this.activeRoom) {
+    if (citizen.room !== this.activeRegion) {
       return;
     }
 
@@ -150,7 +169,11 @@ class WuWaVerse {
       const nextDelay = 2.5 + ((hashString(citizen.agentId) % 7) * 0.25);
       if (timer >= nextDelay) {
         this.idleTimers.set(citizen.agentId, 0);
-        const wander = pickFromArray(WORLD[this.activeRoom].wanderZones, citizen.agentId, Math.floor(performance.now() / 1000));
+        const wander = pickFromArray(
+          WORLD[this.activeRegion].wanderZones,
+          citizen.agentId,
+          Math.floor(performance.now() / 1000)
+        );
         if (wander) {
           this.moveCitizenToLocation(citizen, wander, blockedByCitizen);
         }
@@ -181,12 +204,18 @@ class WuWaVerse {
 
   private handleSignalUpdate(agents: CitizenAgentSnapshot[]) {
     for (const agent of agents) {
-      this.agents.set(agent.agent, agent);
+      const region = normalizeRegion(agent.region ?? agent.room);
+      const nextAgent = {
+        ...agent,
+        region,
+        room: region,
+      };
+      this.agents.set(agent.agent, nextAgent);
       const citizen = this.citizens.find((entry) => entry.agentId === agent.agent);
       if (!citizen) continue;
 
       const prevState = citizen.state;
-      citizen.updateState(normalizeState(agent.state), agent.task, agent.energy, agent.room);
+      citizen.updateState(normalizeState(agent.state), agent.task, agent.energy, region);
 
       if (prevState !== citizen.state) {
         if (citizen.state === 'working' && agent.task) {
@@ -204,7 +233,7 @@ class WuWaVerse {
   }
 
   private updateCitizenEffects(citizen: Citizen, delta: number) {
-    if (citizen.room !== this.activeRoom) return;
+    if (citizen.room !== this.activeRegion) return;
 
     const timer = (this.particleTimers.get(citizen.agentId) ?? 0) + delta;
     this.particleTimers.set(citizen.agentId, timer);
@@ -236,46 +265,47 @@ class WuWaVerse {
     this.speechBubbles.show(target.x + 16, target.y, status, 3);
   }
 
-  private async switchRoom(room: RoomId) {
-    if (room === this.activeRoom) return;
-    this.activeRoom = room;
-    await this.scene.setConfig(WORLD[room].scene);
-    this.refreshRoomUi();
+  private async switchRegion(region: RegionId) {
+    if (region === this.activeRegion) return;
+    this.activeRegion = region;
+    await this.scene.setConfig(WORLD[region].scene);
+    this.refreshRegionUi();
     this.refreshAgentUi();
     this.refreshSelectedCitizen();
   }
 
-  private resolveDesiredRoom(citizen: Citizen, snapshot?: CitizenAgentSnapshot): RoomId {
-    if (snapshot?.room && snapshot.room in WORLD) {
-      return snapshot.room as RoomId;
+  private resolveDesiredRegion(citizen: Citizen, snapshot?: CitizenAgentSnapshot): RegionId {
+    if (snapshot?.region && snapshot.region in WORLD) {
+      return snapshot.region as RegionId;
     }
-    if (citizen.state === 'sleeping' || citizen.state === 'offline') return 'lounge';
-    if (citizen.state === 'thinking' || citizen.state === 'speaking' || citizen.state === 'error') return 'meeting';
-    if (citizen.agentId === 'codex') return 'training';
-    if (citizen.agentId === 'gemini') return 'meeting';
-    return 'lobby';
+    if (snapshot?.room && snapshot.room in WORLD) {
+      return snapshot.room as RegionId;
+    }
+    return normalizeRegion(citizen.anchorLocation);
   }
 
   private chooseTargetLocation(citizen: Citizen, snapshot?: CitizenAgentSnapshot): string | null {
-    const room = WORLD[this.activeRoom];
-    if (citizen.room !== room.id) return null;
-    const candidates = room.stateTargets[citizen.state] ?? room.wanderZones;
+    const region = WORLD[this.activeRegion];
+    if (citizen.room !== region.id) return null;
+    const candidates = region.stateTargets[citizen.state] ?? region.wanderZones;
     const seed = `${citizen.agentId}:${snapshot?.task ?? citizen.task ?? citizen.state}`;
     return pickFromArray(candidates, seed, 0) ?? null;
   }
 
-  private refreshRoomUi() {
-    const room = WORLD[this.activeRoom];
-    document.body.dataset.room = room.id;
+  private refreshRegionUi() {
+    const region = WORLD[this.activeRegion];
+    document.body.dataset.room = region.id;
     const roomName = document.getElementById('room-name');
     const stageName = document.getElementById('room-name-stage');
     const roomTagline = document.getElementById('room-tagline');
-    if (roomName) roomName.textContent = room.name;
-    if (stageName) stageName.textContent = room.name;
-    if (roomTagline) roomTagline.textContent = room.tagline;
+    const roomHighlights = document.getElementById('room-highlights');
+    if (roomName) roomName.textContent = region.name;
+    if (stageName) stageName.textContent = `${region.name} · ${region.shortName}`;
+    if (roomTagline) roomTagline.textContent = region.tagline;
+    if (roomHighlights) roomHighlights.textContent = `地标：${region.highlights.join(' · ')}`;
 
-    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-room-switch]')) {
-      button.classList.toggle('active', button.dataset.roomSwitch === room.id);
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-region-switch]')) {
+      button.classList.toggle('active', button.dataset.regionSwitch === region.id);
     }
   }
 
@@ -287,13 +317,14 @@ class WuWaVerse {
     const info = document.getElementById('agents-info');
     if (info) {
       const list = this.citizens
-        .filter((citizen) => citizen.room === this.activeRoom)
+        .filter((citizen) => citizen.room === this.activeRegion)
         .map((citizen) => {
           const agent = this.agents.get(citizen.agentId);
           const task = agent?.task ?? citizen.task ?? '待命中';
-          return `${citizen.name} · ${labelState(citizen.state)} · ${task}`;
+          const faction = agent?.faction ?? '自由共鸣者';
+          return `${citizen.name} · ${faction} · ${labelState(citizen.state)} · ${task}`;
         });
-      info.textContent = list.length > 0 ? list.join('\n') : '当前房间暂无活跃共鸣者。';
+      info.textContent = list.length > 0 ? list.join('\n') : '当前地区暂无活跃共鸣者。';
     }
   }
 
@@ -313,17 +344,17 @@ class WuWaVerse {
       meta.textContent = '点击画布中的角色查看详情';
       task.textContent = '--';
       energy.textContent = '--';
-      room.textContent = WORLD[this.activeRoom].name;
+      room.textContent = WORLD[this.activeRegion].name;
       return;
     }
 
     const snapshot = this.agents.get(selected.agentId);
     panel.classList.remove('is-empty');
     title.textContent = selected.name;
-    meta.textContent = `${selected.role} · ${labelState(selected.state)}`;
+    meta.textContent = `${snapshot?.faction ?? selected.role} · ${labelState(selected.state)}`;
     task.textContent = snapshot?.task ?? selected.task ?? '待命中';
     energy.textContent = `${Math.round((snapshot?.energy ?? selected.energy) * 100)}%`;
-    room.textContent = WORLD[selected.room as RoomId]?.name ?? selected.room;
+    room.textContent = WORLD[normalizeRegion(snapshot?.region ?? selected.room)].name;
   }
 }
 
@@ -342,6 +373,12 @@ function normalizeState(value: string | undefined): AgentState {
   }
 }
 
+function normalizeRegion(value: string | undefined): RegionId {
+  if (!value) return 'rinascita';
+  if (value in WORLD) return value as RegionId;
+  return inferRegionFromLocation(value);
+}
+
 function labelState(state: AgentState): string {
   return {
     working: '执行中',
@@ -352,13 +389,6 @@ function labelState(state: AgentState): string {
     error: '异常',
     offline: '离线',
   }[state];
-}
-
-function inferRoomFromLocation(location: string): RoomId {
-  if (location.startsWith('meeting_')) return 'meeting';
-  if (location.startsWith('lounge_')) return 'lounge';
-  if (location.startsWith('training_')) return 'training';
-  return 'lobby';
 }
 
 function pickFromArray<T>(items: T[], seed: string, offset: number): T | undefined {
@@ -375,10 +405,10 @@ function hashString(input: string): number {
   return hash;
 }
 
-function wireRoomButtons(onSwitch: (room: RoomId) => void) {
-  for (const room of ROOM_ORDER) {
-    const button = document.querySelector<HTMLButtonElement>(`[data-room-switch="${room}"]`);
-    button?.addEventListener('click', () => onSwitch(room));
+function wireRegionButtons(onSwitch: (region: RegionId) => void) {
+  for (const region of REGION_ORDER) {
+    const button = document.querySelector<HTMLButtonElement>(`[data-region-switch="${region}"]`);
+    button?.addEventListener('click', () => onSwitch(region));
   }
 }
 
@@ -515,12 +545,16 @@ async function init() {
   const loading = document.getElementById('loading');
   if (loading) loading.remove();
 
+  const isViteDev = window.location.port === '5173';
+  const origin = isViteDev ? `${window.location.protocol}//${window.location.hostname}:4321` : window.location.origin;
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsHost = window.location.port === '5173'
-    ? `${window.location.hostname}:4321`
-    : window.location.host;
-  const wsUrl = `${wsProtocol}//${wsHost}`;
-  const wuwa = new WuWaVerse(app, wsUrl);
+  const wsHost = isViteDev ? `${window.location.hostname}:4321` : window.location.host;
+  const wsUrl = `${wsProtocol}//${wsHost}/api/ws`;
+  const wuwa = new WuWaVerse(app, {
+    wsUrl,
+    agentsUrl: `${origin}/api/agents`,
+    heartbeatUrl: `${origin}/api/heartbeat`,
+  });
   await wuwa.start();
 
   window.addEventListener('beforeunload', () => {

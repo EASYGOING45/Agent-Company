@@ -1,20 +1,25 @@
 /**
- * 鸣潮元宇宙 - 世界配置
- * 隐海修会基地四房间布局
+ * 鸣潮元宇宙 - 索拉里斯大陆世界配置
+ * 以地区为主视角，兼容旧 room 字段。
  */
 
 import type { AgentState } from '../citizens/Citizen.ts';
 import type { SceneConfig } from '../scene/Scene.ts';
 
-export type RoomId = 'lobby' | 'meeting' | 'lounge' | 'training';
+export type RegionTheme = 'blue' | 'green' | 'warm' | 'purple';
 
-export interface RoomDefinition {
-  id: RoomId;
+export type RegionId = 'huanglong' | 'blackshores' | 'rinascita' | 'frontier';
+export type RoomId = RegionId;
+
+export interface RegionDefinition {
+  id: RegionId;
   name: string;
-  theme: 'blue' | 'green' | 'warm' | 'purple';
+  shortName: string;
+  theme: RegionTheme;
   color: string;
   tagline: string;
   description: string;
+  highlights: string[];
   scene: SceneConfig;
   stateTargets: Record<AgentState, string[]>;
   wanderZones: string[];
@@ -27,6 +32,8 @@ export interface CitizenSeed {
   position: string;
   color: string;
   role: string;
+  faction: string;
+  region: RegionId;
 }
 
 export const WUWA_COLORS = {
@@ -44,97 +51,199 @@ export const WUWA_COLORS = {
 };
 
 export const INITIAL_CITIZENS: CitizenSeed[] = [
-  { agentId: 'phoebe', name: '菲比', sprite: 'phoebe', position: 'lobby_center', color: WUWA_COLORS.neonGold, role: 'owner' },
-  { agentId: 'claude', name: 'Claude', sprite: 'claude', position: 'lobby_desk_1', color: WUWA_COLORS.neonBlue, role: 'member' },
-  { agentId: 'gemini', name: 'Gemini', sprite: 'gemini', position: 'meeting_console_2', color: WUWA_COLORS.neonGreen, role: 'member' },
-  { agentId: 'codex', name: 'Codex', sprite: 'codex', position: 'training_ring_south', color: WUWA_COLORS.neonPurple, role: 'member' },
+  {
+    agentId: 'phoebe',
+    name: '菲比',
+    sprite: 'phoebe',
+    position: 'rinascita_scholar_hall',
+    color: '#f3c56b',
+    role: 'owner',
+    faction: '隐海修会',
+    region: 'rinascita',
+  },
+  {
+    agentId: 'jinxi',
+    name: '今汐',
+    sprite: 'jinxi',
+    position: 'huanglong_city_center',
+    color: '#7fe4d6',
+    role: 'sentinel',
+    faction: '今州令尹府',
+    region: 'huanglong',
+  },
+  {
+    agentId: 'changli',
+    name: '长离',
+    sprite: 'changli',
+    position: 'huanglong_peach_garden',
+    color: '#ff9f72',
+    role: 'strategist',
+    faction: '今州令尹府',
+    region: 'huanglong',
+  },
+  {
+    agentId: 'jiyan',
+    name: '忌炎',
+    sprite: 'jiyan',
+    position: 'huanglong_cloud_peak',
+    color: '#87f0c7',
+    role: 'marshal',
+    faction: '夜归军',
+    region: 'huanglong',
+  },
+  {
+    agentId: 'xiangliyao',
+    name: '相里要',
+    sprite: 'xiangliyao',
+    position: 'frontier_ruins_gate',
+    color: '#7fc2ff',
+    role: 'researcher',
+    faction: '稷廷遗址考察队',
+    region: 'frontier',
+  },
+  {
+    agentId: 'colletta',
+    name: '珂莱塔',
+    sprite: 'colletta',
+    position: 'blackshores_vault',
+    color: '#b79cff',
+    role: 'curator',
+    faction: '黑海岸',
+    region: 'blackshores',
+  },
+  {
+    agentId: 'roccia',
+    name: '洛可可',
+    sprite: 'roccia',
+    position: 'blackshores_garden',
+    color: '#ffb4d8',
+    role: 'designer',
+    faction: '斐撒烈家族',
+    region: 'blackshores',
+  },
+  {
+    agentId: 'zani',
+    name: '赞妮',
+    sprite: 'zani',
+    position: 'rinascita_laguna_forum',
+    color: '#ffd07a',
+    role: 'envoy',
+    faction: '斐撒烈家族',
+    region: 'rinascita',
+  },
+  {
+    agentId: 'brant',
+    name: '布兰特',
+    sprite: 'brant',
+    position: 'blackshores_tethys_core',
+    color: '#72c3ff',
+    role: 'captain',
+    faction: '黑海岸',
+    region: 'blackshores',
+  },
 ];
 
-export const ROOM_ORDER: RoomId[] = ['lobby', 'meeting', 'lounge', 'training'];
+export const REGION_ORDER: RegionId[] = ['huanglong', 'blackshores', 'rinascita', 'frontier'];
+export const ROOM_ORDER: RoomId[] = REGION_ORDER;
 
-export function createWorldDefinition(): Record<RoomId, RoomDefinition> {
+export function createWorldDefinition(): Record<RegionId, RegionDefinition> {
   return {
-    lobby: {
-      id: 'lobby',
-      name: '主厅',
-      theme: 'blue',
-      color: WUWA_COLORS.neonBlue,
-      tagline: '潮声前台，接收今日回响',
-      description: '任务分流与动态总览中心。',
-      scene: createLobbyScene(),
-      stateTargets: {
-        working: ['lobby_desk_1', 'lobby_desk_2', 'lobby_desk_3'],
-        sleeping: ['lobby_window_bench'],
-        idle: ['lobby_center', 'lobby_walk_1', 'lobby_walk_2'],
-        thinking: ['lobby_map', 'lobby_center'],
-        speaking: ['lobby_center'],
-        error: ['lobby_map'],
-        offline: ['lobby_window_bench'],
-      },
-      wanderZones: ['lobby_center', 'lobby_walk_1', 'lobby_walk_2', 'lobby_walk_3'],
-    },
-    meeting: {
-      id: 'meeting',
-      name: '共鸣室',
+    huanglong: {
+      id: 'huanglong',
+      name: '瑝珑',
+      shortName: '今州',
       theme: 'green',
-      color: WUWA_COLORS.neonGreen,
-      tagline: '作战推演与共鸣校准',
-      description: '讨论与校准同步在此进行。',
-      scene: createMeetingScene(),
+      color: '#87f0c7',
+      tagline: '今州城风脉与乘霄山云海交汇的秩序中枢',
+      description: '收纳今州城、虹镇、桃源乡与乘霄山的主大陆前线。',
+      highlights: ['今州城', '虹镇', '桃源乡', '乘霄山'],
+      scene: createHuanglongScene(),
       stateTargets: {
-        working: ['meeting_console_1', 'meeting_console_2', 'meeting_console_3'],
-        sleeping: ['meeting_recliner'],
-        idle: ['meeting_center', 'meeting_walk_1', 'meeting_walk_2'],
-        thinking: ['meeting_board', 'meeting_center'],
-        speaking: ['meeting_center'],
-        error: ['meeting_board'],
-        offline: ['meeting_recliner'],
+        working: ['huanglong_city_console', 'huanglong_rainbow_town', 'huanglong_cloud_peak'],
+        sleeping: ['huanglong_peach_garden'],
+        idle: ['huanglong_city_center', 'huanglong_city_walk_1', 'huanglong_city_walk_2'],
+        thinking: ['huanglong_strategy_map', 'huanglong_city_center'],
+        speaking: ['huanglong_city_center'],
+        error: ['huanglong_strategy_map'],
+        offline: ['huanglong_peach_garden'],
       },
-      wanderZones: ['meeting_center', 'meeting_walk_1', 'meeting_walk_2', 'meeting_walk_3'],
+      wanderZones: ['huanglong_city_walk_1', 'huanglong_city_walk_2', 'huanglong_rainbow_town', 'huanglong_city_center'],
     },
-    lounge: {
-      id: 'lounge',
-      name: '休息室',
-      theme: 'warm',
-      color: WUWA_COLORS.neonWarm,
-      tagline: '把灵感沉到温热灯下',
-      description: '恢复、闲聊和短暂停靠区域。',
-      scene: createLoungeScene(),
-      stateTargets: {
-        working: ['lounge_reading_table', 'lounge_bar'],
-        sleeping: ['lounge_couch_1', 'lounge_couch_2', 'lounge_daybed'],
-        idle: ['lounge_center', 'lounge_walk_1', 'lounge_walk_2'],
-        thinking: ['lounge_window', 'lounge_center'],
-        speaking: ['lounge_center'],
-        error: ['lounge_window'],
-        offline: ['lounge_daybed'],
-      },
-      wanderZones: ['lounge_center', 'lounge_walk_1', 'lounge_walk_2', 'lounge_walk_3'],
-    },
-    training: {
-      id: 'training',
-      name: '训练场',
+    blackshores: {
+      id: 'blackshores',
+      name: '黑海岸',
+      shortName: '黑海岸',
       theme: 'purple',
-      color: WUWA_COLORS.neonPurple,
-      tagline: '高频实验，释放压力',
-      description: '训练回路与实验装置集中在此。',
-      scene: createTrainingScene(),
+      color: '#9f8cff',
+      tagline: '泰缇斯之底的潮汐机库与金库花房共鸣',
+      description: '聚合泰缇斯之底、金库与花房的高保密行动枢纽。',
+      highlights: ['泰缇斯之底', '金库', '花房'],
+      scene: createBlackShoresScene(),
       stateTargets: {
-        working: ['training_console', 'training_ring_north', 'training_ring_south'],
-        sleeping: ['training_pod'],
-        idle: ['training_center', 'training_walk_1', 'training_walk_2'],
-        thinking: ['training_holo', 'training_center'],
-        speaking: ['training_center'],
-        error: ['training_holo'],
-        offline: ['training_pod'],
+        working: ['blackshores_tethys_core', 'blackshores_vault', 'blackshores_command_desk'],
+        sleeping: ['blackshores_garden'],
+        idle: ['blackshores_center', 'blackshores_walk_1', 'blackshores_walk_2'],
+        thinking: ['blackshores_data_wall', 'blackshores_center'],
+        speaking: ['blackshores_center'],
+        error: ['blackshores_data_wall'],
+        offline: ['blackshores_garden'],
       },
-      wanderZones: ['training_center', 'training_walk_1', 'training_walk_2', 'training_walk_3'],
+      wanderZones: ['blackshores_walk_1', 'blackshores_walk_2', 'blackshores_center', 'blackshores_garden'],
+    },
+    rinascita: {
+      id: 'rinascita',
+      name: '黎那汐塔',
+      shortName: '拉古那',
+      theme: 'warm',
+      color: '#f3c56b',
+      tagline: '拉古那城邦与隐海修会之间的金色潮声',
+      description: '覆盖拉古那城邦上层议事区与隐海修会学术穹顶。',
+      highlights: ['拉古那城邦', '隐海修会'],
+      scene: createRinascitaScene(),
+      stateTargets: {
+        working: ['rinascita_scholar_hall', 'rinascita_laguna_forum', 'rinascita_archive'],
+        sleeping: ['rinascita_cloister'],
+        idle: ['rinascita_center', 'rinascita_walk_1', 'rinascita_walk_2'],
+        thinking: ['rinascita_tide_observatory', 'rinascita_center'],
+        speaking: ['rinascita_laguna_forum'],
+        error: ['rinascita_archive'],
+        offline: ['rinascita_cloister'],
+      },
+      wanderZones: ['rinascita_walk_1', 'rinascita_walk_2', 'rinascita_center', 'rinascita_laguna_forum'],
+    },
+    frontier: {
+      id: 'frontier',
+      name: '北落野',
+      shortName: '北落野',
+      theme: 'blue',
+      color: '#64d5ff',
+      tagline: '北落野风蚀台地与稷廷遗址裂谷遥相呼应',
+      description: '以北落野营地为核心，外联稷廷遗址与边境观测节点。',
+      highlights: ['北落野', '稷廷遗址'],
+      scene: createFrontierScene(),
+      stateTargets: {
+        working: ['frontier_command_post', 'frontier_ruins_gate', 'frontier_field_lab'],
+        sleeping: ['frontier_campfire'],
+        idle: ['frontier_center', 'frontier_walk_1', 'frontier_walk_2'],
+        thinking: ['frontier_horizon_scope', 'frontier_center'],
+        speaking: ['frontier_center'],
+        error: ['frontier_ruins_gate'],
+        offline: ['frontier_campfire'],
+      },
+      wanderZones: ['frontier_walk_1', 'frontier_walk_2', 'frontier_center', 'frontier_field_lab'],
     },
   };
 }
 
 export function createDefaultScene(): SceneConfig {
-  return createWorldDefinition().lobby.scene;
+  return createWorldDefinition().rinascita.scene;
+}
+
+export function inferRegionFromLocation(location: string): RegionId {
+  if (location.startsWith('huanglong_')) return 'huanglong';
+  if (location.startsWith('blackshores_')) return 'blackshores';
+  if (location.startsWith('rinascita_')) return 'rinascita';
+  return 'frontier';
 }
 
 function createBlankGrid(fill: string): string[][] {
@@ -149,7 +258,7 @@ function createWalkableGrid(): boolean[][] {
 
 function finalizeScene(
   id: string,
-  theme: SceneConfig['theme'],
+  theme: RegionTheme,
   floor: string[][],
   decor: string[][],
   walkable: boolean[][],
@@ -171,8 +280,8 @@ function finalizeScene(
 }
 
 function outlineRoom(floor: string[][], decor: string[][], walkable: boolean[][], wallVariant: string) {
-  for (let y = 0; y < 12; y++) {
-    for (let x = 0; x < 16; x++) {
+  for (let y = 0; y < 12; y += 1) {
+    for (let x = 0; x < 16; x += 1) {
       if (x === 0 || x === 15 || y === 0 || y === 11) {
         floor[y][x] = wallVariant;
         decor[y][x] = '';
@@ -188,163 +297,150 @@ function block(walkable: boolean[][], x: number, y: number, value = false) {
   }
 }
 
-function createLobbyScene(): SceneConfig {
-  const floor = createBlankGrid('floor');
-  const decor = createBlankGrid('');
-  const walkable = createWalkableGrid();
-  outlineRoom(floor, decor, walkable, 'wall');
-
-  for (let y = 1; y < 11; y++) {
-    for (let x = 1; x < 15; x++) {
-      floor[y][x] = y <= 3 ? 'floor_blue' : y >= 8 ? 'floor_grid' : 'floor';
-    }
-  }
-
-  for (const x of [3, 7, 11]) {
-    decor[2][x] = 'desk';
-    decor[2][x + 1] = 'desk';
-    block(walkable, x, 2);
-    block(walkable, x + 1, 2);
-  }
-  decor[8][12] = 'bench';
-  decor[8][13] = 'bench';
-  block(walkable, 12, 8);
-  block(walkable, 13, 8);
-  decor[4][12] = 'holo';
-  block(walkable, 12, 4);
-
-  const locations = {
-    lobby_desk_1: { x: 3, y: 3, label: '前台工位 1' },
-    lobby_desk_2: { x: 7, y: 3, label: '前台工位 2' },
-    lobby_desk_3: { x: 11, y: 3, label: '前台工位 3' },
-    lobby_center: { x: 8, y: 6, label: '大厅中枢' },
-    lobby_map: { x: 11, y: 5, label: '作战投影' },
-    lobby_window_bench: { x: 12, y: 9, label: '观景长椅' },
-    lobby_walk_1: { x: 5, y: 7, label: '走廊 A' },
-    lobby_walk_2: { x: 9, y: 7, label: '走廊 B' },
-    lobby_walk_3: { x: 4, y: 9, label: '回廊' },
-  };
-
-  return finalizeScene('wuwa-lobby', 'blue', floor, decor, walkable, locations);
-}
-
-function createMeetingScene(): SceneConfig {
+function createHuanglongScene(): SceneConfig {
   const floor = createBlankGrid('floor_green');
   const decor = createBlankGrid('');
   const walkable = createWalkableGrid();
   outlineRoom(floor, decor, walkable, 'wall_green');
 
-  for (let y = 1; y < 11; y++) {
-    for (let x = 1; x < 15; x++) {
-      floor[y][x] = y >= 4 && y <= 7 ? 'floor_resonance' : 'floor_green';
+  for (let y = 1; y < 11; y += 1) {
+    for (let x = 1; x < 15; x += 1) {
+      floor[y][x] = y <= 3 ? 'floor_resonance' : x >= 10 ? 'floor_green' : 'floor';
     }
   }
 
-  for (const [x, y] of [[4, 3], [7, 3], [10, 3]]) {
-    decor[y][x] = 'console';
-    decor[y][x + 1] = 'console';
-    block(walkable, x, y);
-    block(walkable, x + 1, y);
-  }
-  decor[6][12] = 'board';
-  block(walkable, 12, 6);
-  decor[8][3] = 'chair';
-  block(walkable, 3, 8);
-
-  const locations = {
-    meeting_console_1: { x: 4, y: 4, label: '共鸣台 1' },
-    meeting_console_2: { x: 8, y: 4, label: '共鸣台 2' },
-    meeting_console_3: { x: 11, y: 4, label: '共鸣台 3' },
-    meeting_center: { x: 8, y: 6, label: '共鸣核心' },
-    meeting_board: { x: 11, y: 7, label: '战术板' },
-    meeting_recliner: { x: 3, y: 9, label: '校准椅' },
-    meeting_walk_1: { x: 5, y: 8, label: '走道 A' },
-    meeting_walk_2: { x: 9, y: 8, label: '走道 B' },
-    meeting_walk_3: { x: 13, y: 8, label: '走道 C' },
-  };
-
-  return finalizeScene('wuwa-meeting', 'green', floor, decor, walkable, locations);
-}
-
-function createLoungeScene(): SceneConfig {
-  const floor = createBlankGrid('floor_warm');
-  const decor = createBlankGrid('');
-  const walkable = createWalkableGrid();
-  outlineRoom(floor, decor, walkable, 'wall_warm');
-
-  for (let y = 1; y < 11; y++) {
-    for (let x = 1; x < 15; x++) {
-      floor[y][x] = x >= 9 ? 'floor_carpet' : 'floor_warm';
-    }
-  }
-
-  for (const [x, y] of [[10, 7], [11, 7], [4, 8]]) {
-    decor[y][x] = 'couch';
+  for (const [x, y, asset] of [
+    [3, 3, 'console'],
+    [6, 3, 'desk'],
+    [10, 2, 'board'],
+    [12, 7, 'window'],
+    [4, 8, 'table'],
+  ] as const) {
+    decor[y][x] = asset;
     block(walkable, x, y);
   }
-  decor[5][11] = 'window';
-  block(walkable, 11, 5);
-  decor[3][4] = 'table';
-  decor[3][5] = 'table';
-  block(walkable, 4, 3);
-  block(walkable, 5, 3);
-  decor[4][2] = 'bar';
-  decor[4][3] = 'bar';
-  block(walkable, 2, 4);
-  block(walkable, 3, 4);
 
   const locations = {
-    lounge_reading_table: { x: 4, y: 4, label: '阅读桌' },
-    lounge_bar: { x: 3, y: 5, label: '补给台' },
-    lounge_couch_1: { x: 10, y: 8, label: '沙发 A' },
-    lounge_couch_2: { x: 11, y: 8, label: '沙发 B' },
-    lounge_daybed: { x: 4, y: 9, label: '日光榻' },
-    lounge_window: { x: 10, y: 5, label: '观景窗' },
-    lounge_center: { x: 8, y: 6, label: '暖光区' },
-    lounge_walk_1: { x: 6, y: 8, label: '走道 A' },
-    lounge_walk_2: { x: 8, y: 9, label: '走道 B' },
-    lounge_walk_3: { x: 12, y: 4, label: '走道 C' },
+    huanglong_city_console: { x: 3, y: 4, label: '今州中控台' },
+    huanglong_city_center: { x: 8, y: 5, label: '今州城主街' },
+    huanglong_strategy_map: { x: 10, y: 3, label: '虹镇调度图' },
+    huanglong_rainbow_town: { x: 12, y: 5, label: '虹镇驿桥' },
+    huanglong_peach_garden: { x: 4, y: 9, label: '桃源乡庭院' },
+    huanglong_cloud_peak: { x: 12, y: 9, label: '乘霄山观景台' },
+    huanglong_city_walk_1: { x: 6, y: 7, label: '云桥 A' },
+    huanglong_city_walk_2: { x: 9, y: 8, label: '云桥 B' },
   };
 
-  return finalizeScene('wuwa-lounge', 'warm', floor, decor, walkable, locations);
+  return finalizeScene('solaris-huanglong', 'green', floor, decor, walkable, locations);
 }
 
-function createTrainingScene(): SceneConfig {
+function createBlackShoresScene(): SceneConfig {
   const floor = createBlankGrid('floor_purple');
   const decor = createBlankGrid('');
   const walkable = createWalkableGrid();
   outlineRoom(floor, decor, walkable, 'wall_purple');
 
-  for (let y = 1; y < 11; y++) {
-    for (let x = 1; x < 15; x++) {
-      floor[y][x] = x >= 5 && x <= 10 && y >= 4 && y <= 8 ? 'floor_ring' : 'floor_purple';
+  for (let y = 1; y < 11; y += 1) {
+    for (let x = 1; x < 15; x += 1) {
+      floor[y][x] = x >= 5 && x <= 10 ? 'floor_ring' : 'floor_purple';
     }
   }
 
-  for (const [x, y] of [[6, 5], [9, 5], [6, 7], [9, 7]]) {
-    decor[y][x] = 'pillar';
+  for (const [x, y, asset] of [
+    [3, 3, 'console'],
+    [8, 3, 'holo'],
+    [11, 4, 'board'],
+    [4, 8, 'pod'],
+    [12, 8, 'couch'],
+  ] as const) {
+    decor[y][x] = asset;
     block(walkable, x, y);
   }
-  decor[12 - 8][12] = 'holo';
-  block(walkable, 12, 4);
-  decor[3][3] = 'console';
-  decor[3][4] = 'console';
-  block(walkable, 3, 3);
-  block(walkable, 4, 3);
-  decor[9][12] = 'pod';
-  block(walkable, 12, 9);
 
   const locations = {
-    training_console: { x: 4, y: 4, label: '训练控制台' },
-    training_ring_north: { x: 8, y: 4, label: '训练环北位' },
-    training_ring_south: { x: 8, y: 8, label: '训练环南位' },
-    training_center: { x: 8, y: 6, label: '训练环核心' },
-    training_holo: { x: 11, y: 5, label: '全息靶场' },
-    training_pod: { x: 12, y: 10, label: '恢复舱' },
-    training_walk_1: { x: 4, y: 8, label: '走道 A' },
-    training_walk_2: { x: 11, y: 8, label: '走道 B' },
-    training_walk_3: { x: 12, y: 3, label: '走道 C' },
+    blackshores_command_desk: { x: 3, y: 4, label: '黑海岸指挥席' },
+    blackshores_tethys_core: { x: 8, y: 5, label: '泰缇斯之底' },
+    blackshores_data_wall: { x: 11, y: 5, label: '潮汐数据墙' },
+    blackshores_vault: { x: 5, y: 9, label: '金库封存区' },
+    blackshores_garden: { x: 12, y: 9, label: '花房露台' },
+    blackshores_center: { x: 8, y: 7, label: '潮汐甲板' },
+    blackshores_walk_1: { x: 6, y: 3, label: '廊桥 A' },
+    blackshores_walk_2: { x: 10, y: 8, label: '廊桥 B' },
   };
 
-  return finalizeScene('wuwa-training', 'purple', floor, decor, walkable, locations);
+  return finalizeScene('solaris-blackshores', 'purple', floor, decor, walkable, locations);
+}
+
+function createRinascitaScene(): SceneConfig {
+  const floor = createBlankGrid('floor_warm');
+  const decor = createBlankGrid('');
+  const walkable = createWalkableGrid();
+  outlineRoom(floor, decor, walkable, 'wall_warm');
+
+  for (let y = 1; y < 11; y += 1) {
+    for (let x = 1; x < 15; x += 1) {
+      floor[y][x] = y >= 7 ? 'floor_carpet' : 'floor_warm';
+    }
+  }
+
+  for (const [x, y, asset] of [
+    [3, 3, 'desk'],
+    [7, 3, 'table'],
+    [11, 3, 'board'],
+    [4, 8, 'bench'],
+    [12, 8, 'window'],
+  ] as const) {
+    decor[y][x] = asset;
+    block(walkable, x, y);
+  }
+
+  const locations = {
+    rinascita_scholar_hall: { x: 3, y: 4, label: '隐海修会书厅' },
+    rinascita_laguna_forum: { x: 8, y: 5, label: '拉古那议事台' },
+    rinascita_archive: { x: 11, y: 4, label: '潮汐档案库' },
+    rinascita_tide_observatory: { x: 12, y: 8, label: '观潮台' },
+    rinascita_cloister: { x: 4, y: 9, label: '回廊静室' },
+    rinascita_center: { x: 8, y: 8, label: '城邦中庭' },
+    rinascita_walk_1: { x: 6, y: 7, label: '拱廊 A' },
+    rinascita_walk_2: { x: 10, y: 9, label: '拱廊 B' },
+  };
+
+  return finalizeScene('solaris-rinascita', 'warm', floor, decor, walkable, locations);
+}
+
+function createFrontierScene(): SceneConfig {
+  const floor = createBlankGrid('floor_blue');
+  const decor = createBlankGrid('');
+  const walkable = createWalkableGrid();
+  outlineRoom(floor, decor, walkable, 'wall');
+
+  for (let y = 1; y < 11; y += 1) {
+    for (let x = 1; x < 15; x += 1) {
+      floor[y][x] = x <= 4 ? 'floor' : y <= 4 ? 'floor_grid' : 'floor_blue';
+    }
+  }
+
+  for (const [x, y, asset] of [
+    [3, 3, 'console'],
+    [8, 3, 'board'],
+    [11, 4, 'pillar'],
+    [5, 8, 'bar'],
+    [12, 8, 'bench'],
+  ] as const) {
+    decor[y][x] = asset;
+    block(walkable, x, y);
+  }
+
+  const locations = {
+    frontier_command_post: { x: 3, y: 4, label: '北落野前哨' },
+    frontier_horizon_scope: { x: 8, y: 4, label: '地平观测镜' },
+    frontier_ruins_gate: { x: 11, y: 5, label: '稷廷遗址入口' },
+    frontier_field_lab: { x: 5, y: 9, label: '野外实验台' },
+    frontier_campfire: { x: 12, y: 9, label: '营火区' },
+    frontier_center: { x: 8, y: 7, label: '风蚀平台' },
+    frontier_walk_1: { x: 6, y: 6, label: '巡逻线 A' },
+    frontier_walk_2: { x: 10, y: 8, label: '巡逻线 B' },
+  };
+
+  return finalizeScene('solaris-frontier', 'blue', floor, decor, walkable, locations);
 }
