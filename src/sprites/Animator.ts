@@ -42,27 +42,51 @@ export class Animator {
     if (!anim) return;
 
     this.frameTimer += delta;
-    while (this.frameTimer >= anim.speed) {
-      this.frameTimer -= anim.speed;
-      this.currentFrame = (this.currentFrame + 1) % anim.frames;
+    while (this.frameTimer >= this.getFrameDuration(anim, this.currentFrame)) {
+      this.frameTimer -= this.getFrameDuration(anim, this.currentFrame);
+      if (this.currentFrame >= anim.frames - 1) {
+        if (anim.holdLastFrame) {
+          this.currentFrame = anim.frames - 1;
+          break;
+        }
+        this.currentFrame = anim.loop === false ? anim.frames - 1 : 0;
+        if (anim.loop === false) break;
+      } else {
+        this.currentFrame += 1;
+      }
     }
   }
 
   draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
     if (!this.currentAnim) return;
 
-    const anim = this.spriteSheet.config.animations[this.currentAnim];
-    if (!anim) return;
+    const frame = this.spriteSheet.resolveAnimationFrame(this.currentAnim, this.currentFrame);
+    if (!frame) return;
 
-    const image = this.spriteSheet.getImage(anim.sheet);
-    if (!image) return;
+    const drawWidth = frame.frameWidth * frame.scale;
+    const drawHeight = frame.frameHeight * frame.scale;
+    const drawX = x + (32 - drawWidth) / 2 + frame.offsetX;
+    const drawY = y + (32 - drawHeight) + frame.offsetY;
 
-    const { frameWidth, frameHeight } = this.spriteSheet.config;
-    const srcX = this.currentFrame * frameWidth;
-    const srcY = anim.row * frameHeight;
-    const drawX = x + (32 - frameWidth) / 2;
-    const drawY = y + (32 - frameHeight);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(
+      frame.image,
+      frame.srcX,
+      frame.srcY,
+      frame.frameWidth,
+      frame.frameHeight,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight
+    );
+  }
 
-    ctx.drawImage(image, srcX, srcY, frameWidth, frameHeight, drawX, drawY, frameWidth, frameHeight);
+  getCurrentFrame(): number {
+    return this.currentFrame;
+  }
+
+  private getFrameDuration(anim: NonNullable<SpriteSheet['config']['animations'][string]>, frameIndex: number) {
+    return anim.frameDurations?.[frameIndex] ?? anim.speed;
   }
 }

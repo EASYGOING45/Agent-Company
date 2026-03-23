@@ -14,6 +14,8 @@ interface Particle {
   type: 'zzz' | 'exclamation' | 'thought' | 'noise';
   text?: string;
   color?: string;
+  size?: number;
+  twist?: number;
 }
 
 export class ParticleSystem implements RenderLayer {
@@ -42,6 +44,8 @@ export class ParticleSystem implements RenderLayer {
       maxLife: 0.8 + Math.random() * 0.8,
       type: 'noise',
       color,
+      size: 4 + Math.random() * 8,
+      twist: Math.random() * Math.PI * 2,
     });
   }
 
@@ -72,11 +76,29 @@ export class ParticleSystem implements RenderLayer {
         ctx.fillStyle = `rgba(222, 228, 242, ${alpha})`;
         ctx.fillText(particle.text ?? '?', particle.x, particle.y);
       } else {
-        const size = 1.5 + Math.random() * 2.5;
-        ctx.fillStyle = hexToRgba(particle.color ?? '#64d5ff', alpha * 0.5);
+        const size = particle.size ?? 6;
+        const color = particle.color ?? '#64d5ff';
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate((particle.twist ?? 0) + particle.life * 1.8);
         ctx.shadowColor = particle.color ?? '#64d5ff';
-        ctx.shadowBlur = 8;
-        ctx.fillRect(particle.x, particle.y, size, size);
+        ctx.shadowBlur = 14;
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+        glow.addColorStop(0, hexToRgba(color, alpha * 0.6));
+        glow.addColorStop(0.65, hexToRgba(color, alpha * 0.18));
+        glow.addColorStop(1, hexToRgba(color, 0));
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = hexToRgba(color, alpha * 0.75);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.9, 0);
+        ctx.lineTo(size * 0.9, 0);
+        ctx.moveTo(0, -size * 0.55);
+        ctx.lineTo(0, size * 0.55);
+        ctx.stroke();
       }
       ctx.restore();
     }

@@ -295,14 +295,20 @@ class WuWaVerse {
   private refreshRegionUi() {
     const region = WORLD[this.activeRegion];
     document.body.dataset.room = region.id;
+    document.body.style.setProperty('--scene-image', region.scene.backdrop ? `url("${region.scene.backdrop}")` : 'none');
     const roomName = document.getElementById('room-name');
     const stageName = document.getElementById('room-name-stage');
     const roomTagline = document.getElementById('room-tagline');
     const roomHighlights = document.getElementById('room-highlights');
+    const sceneName = document.getElementById('region-scene-name');
+    const sceneMeta = document.getElementById('region-scene-meta');
     if (roomName) roomName.textContent = region.name;
     if (stageName) stageName.textContent = `${region.name} · ${region.shortName}`;
     if (roomTagline) roomTagline.textContent = region.tagline;
     if (roomHighlights) roomHighlights.textContent = `地标：${region.highlights.join(' · ')}`;
+    if (sceneName) sceneName.textContent = region.shortName;
+    if (sceneMeta) sceneMeta.textContent = region.description;
+    setElementBackground(document.getElementById('region-scene-art'), region.scene.backdrop ?? null);
 
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-region-switch]')) {
       button.classList.toggle('active', button.dataset.regionSwitch === region.id);
@@ -335,16 +341,19 @@ class WuWaVerse {
     const task = document.getElementById('citizen-task');
     const energy = document.getElementById('citizen-energy');
     const room = document.getElementById('citizen-room');
-    if (!panel || !title || !meta || !task || !energy || !room) return;
+    const faction = document.getElementById('citizen-faction');
+    if (!panel || !title || !meta || !task || !energy || !room || !faction) return;
 
     const selected = this.selectedCitizen;
     if (!selected) {
       panel.classList.add('is-empty');
       title.textContent = '选择共鸣者';
       meta.textContent = '点击画布中的角色查看详情';
+      faction.textContent = '共鸣者档案';
       task.textContent = '--';
       energy.textContent = '--';
       room.textContent = WORLD[this.activeRegion].name;
+      setElementBackground(document.getElementById('citizen-art'), WORLD[this.activeRegion].scene.backdrop ?? null);
       return;
     }
 
@@ -352,9 +361,11 @@ class WuWaVerse {
     panel.classList.remove('is-empty');
     title.textContent = selected.name;
     meta.textContent = `${snapshot?.faction ?? selected.role} · ${labelState(selected.state)}`;
+    faction.textContent = snapshot?.faction ?? selected.role;
     task.textContent = snapshot?.task ?? selected.task ?? '待命中';
     energy.textContent = `${Math.round((snapshot?.energy ?? selected.energy) * 100)}%`;
     room.textContent = WORLD[normalizeRegion(snapshot?.region ?? selected.room)].name;
+    setElementBackground(document.getElementById('citizen-art'), selected.portrait);
   }
 }
 
@@ -423,16 +434,17 @@ function createWuWaSpriteConfig(primary: string, secondary: string, shadow: stri
       idle_up: { sheet: 'actions', row: 1, frames: 4, speed: 0.22 },
       idle_left: { sheet: 'actions', row: 2, frames: 4, speed: 0.22 },
       idle_right: { sheet: 'actions', row: 3, frames: 4, speed: 0.22 },
-      working: { sheet: 'actions', row: 4, frames: 4, speed: 0.16 },
-      sleeping: { sheet: 'actions', row: 5, frames: 4, speed: 0.36 },
-      talking: { sheet: 'actions', row: 6, frames: 4, speed: 0.14 },
-      walk_down: { sheet: 'walk', row: 0, frames: 4, speed: 0.12 },
-      walk_up: { sheet: 'walk', row: 1, frames: 4, speed: 0.12 },
-      walk_left: { sheet: 'walk', row: 2, frames: 4, speed: 0.12 },
-      walk_right: { sheet: 'walk', row: 3, frames: 4, speed: 0.12 },
+      working: { sheet: 'actions', row: 4, frames: 4, speed: 0.16, frameDurations: [0.12, 0.16, 0.16, 0.22] },
+      sleeping: { sheet: 'actions', row: 5, frames: 4, speed: 0.36, frameDurations: [0.5, 0.4, 0.5, 0.7] },
+      talking: { sheet: 'actions', row: 6, frames: 4, speed: 0.14, frameDurations: [0.12, 0.1, 0.14, 0.18] },
+      walk_down: { sheet: 'walk', row: 0, frames: 4, speed: 0.12, offsetY: -2 },
+      walk_up: { sheet: 'walk', row: 1, frames: 4, speed: 0.12, offsetY: -2 },
+      walk_left: { sheet: 'walk', row: 2, frames: 4, speed: 0.12, offsetY: -2 },
+      walk_right: { sheet: 'walk', row: 3, frames: 4, speed: 0.12, offsetY: -2 },
     },
     frameWidth: 32,
     frameHeight: 48,
+    defaultOffsetY: -1,
   };
 }
 
@@ -493,6 +505,8 @@ function drawFrame(
   ctx.fillRect(11, 18, 10, 14);
   ctx.fillStyle = `${primary}bb`;
   ctx.fillRect(12, 16, 8, 3);
+  ctx.fillRect(9, 21, 2, 9);
+  ctx.fillRect(21, 21, 2, 9);
 
   ctx.fillStyle = shadow;
   ctx.fillRect(11 + sway * 0.2, 31, 4, 10);
@@ -503,6 +517,11 @@ function drawFrame(
   ctx.beginPath();
   ctx.moveTo(16, 18);
   ctx.lineTo(16, 30);
+  ctx.stroke();
+  ctx.strokeStyle = `${secondary}88`;
+  ctx.beginPath();
+  ctx.moveTo(12, 20);
+  ctx.lineTo(20, 20);
   ctx.stroke();
 
   if (!faceUp) {
@@ -522,6 +541,7 @@ function drawFrame(
       ctx.fillStyle = 'rgba(100, 213, 255, 0.45)';
       ctx.fillRect(4 + frame, 6, 8, 3);
       ctx.fillRect(20 - frame, 8, 6, 2);
+      ctx.fillRect(11, 35, 10, 2);
     } else if (row === 5) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
       ctx.fillRect(8, 37, 16, 4);
@@ -534,6 +554,11 @@ function drawFrame(
   }
 
   ctx.restore();
+}
+
+function setElementBackground(element: HTMLElement | null, src: string | null) {
+  if (!element) return;
+  element.style.backgroundImage = src ? `linear-gradient(180deg, rgba(8, 12, 28, 0.1), rgba(8, 12, 28, 0.85)), url("${src}")` : 'none';
 }
 
 async function init() {

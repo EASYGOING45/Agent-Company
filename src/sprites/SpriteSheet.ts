@@ -21,6 +21,7 @@ export class SpriteSheet {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
+          void img.decode?.().catch(() => undefined);
           this.images.set(name, img);
           resolve();
         };
@@ -47,5 +48,29 @@ export class SpriteSheet {
 
   isLoaded(): boolean {
     return this.loaded;
+  }
+
+  resolveAnimationFrame(animationName: string, frameIndex: number) {
+    const animation = this.config.animations[animationName];
+    if (!animation) return null;
+
+    const image = this.getImage(animation.sheet);
+    if (!image) return null;
+
+    const frameWidth = this.config.frameWidth;
+    const frameHeight = this.config.frameHeight;
+    const normalizedFrame = Math.max(0, Math.min(frameIndex, animation.frames - 1));
+
+    return {
+      animation,
+      image,
+      frameWidth,
+      frameHeight,
+      srcX: normalizedFrame * frameWidth,
+      srcY: animation.row * frameHeight,
+      scale: animation.scale ?? this.config.defaultScale ?? 1,
+      offsetX: animation.offsetX ?? this.config.defaultOffsetX ?? 0,
+      offsetY: animation.offsetY ?? this.config.defaultOffsetY ?? 0,
+    };
   }
 }

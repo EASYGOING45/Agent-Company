@@ -24,6 +24,8 @@ export interface CitizenConfig {
   npc?: boolean;
   color?: string;
   role?: string;
+  portrait?: string;
+  portraitFocus?: string;
 }
 
 export interface MovementContext {
@@ -47,6 +49,8 @@ export class Citizen {
   readonly spriteSheet: SpriteSheet;
   readonly color: string;
   readonly role: string;
+  readonly portrait: string | null;
+  readonly portraitFocus: string;
 
   x = 0;
   y = 0;
@@ -65,6 +69,8 @@ export class Citizen {
   private tileWidth: number;
   private tileHeight: number;
   private facing: 'up' | 'down' | 'left' | 'right' = 'down';
+  private portraitImage: HTMLImageElement | null = null;
+  private portraitLoaded = false;
 
   constructor(config: CitizenConfig, spriteSheet: SpriteSheet, tileWidth: number, tileHeight: number) {
     this.agentId = config.agentId;
@@ -75,8 +81,11 @@ export class Citizen {
     this.tileHeight = tileHeight;
     this.color = config.color ?? '#64d5ff';
     this.role = config.role ?? 'member';
+    this.portrait = config.portrait ?? null;
+    this.portraitFocus = config.portraitFocus ?? 'center';
     this.anchorLocation = config.position;
     this.room = inferRoomId(config.position);
+    this.loadPortrait();
     this.animator.play('idle_down');
   }
 
@@ -156,20 +165,23 @@ export class Citizen {
   draw(ctx: CanvasRenderingContext2D) {
     if (!this.visible) return;
 
+    this.drawAura(ctx);
     this.animator.draw(ctx, this.x, this.y);
+    this.drawPortraitBadge(ctx);
+    this.drawEnergyArc(ctx);
 
     ctx.save();
     ctx.font = '10px "Noto Sans SC", sans-serif';
     ctx.textAlign = 'center';
-    const tagX = this.x + this.tileWidth / 2;
-    const tagY = this.y - 10;
+    const tagX = this.x + this.tileWidth / 2 + 10;
+    const tagY = this.y - 12;
     const nameWidth = ctx.measureText(this.name).width;
 
-    ctx.fillStyle = 'rgba(7, 12, 26, 0.8)';
-    ctx.strokeStyle = `${this.color}66`;
+    ctx.fillStyle = 'rgba(8, 12, 28, 0.88)';
+    ctx.strokeStyle = `${this.color}88`;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(tagX - nameWidth / 2 - 6, tagY - 11, nameWidth + 12, 16, 6);
+    ctx.roundRect(tagX - nameWidth / 2 - 9, tagY - 12, nameWidth + 18, 18, 8);
     ctx.fill();
     ctx.stroke();
 
@@ -179,7 +191,7 @@ export class Citizen {
   }
 
   containsPoint(px: number, py: number): boolean {
-    return px >= this.x && px <= this.x + this.tileWidth && py >= this.y && py <= this.y + this.tileHeight;
+    return px >= this.x - 6 && px <= this.x + this.tileWidth + 6 && py >= this.y - 24 && py <= this.y + this.tileHeight;
   }
 
   private updateMovement(delta: number, _pathfinder: Pathfinder, context: MovementContext) {
@@ -235,6 +247,88 @@ export class Citizen {
     }
     this.animator.play(mapped);
   }
+
+  private loadPortrait() {
+    if (!this.portrait) return;
+
+    const image = new Image();
+    image.onload = () => {
+      this.portraitLoaded = true;
+      this.portraitImage = image;
+    };
+    image.src = this.portrait;
+  }
+
+  private drawAura(ctx: CanvasRenderingContext2D) {
+    const centerX = this.x + this.tileWidth / 2;
+    const baseY = this.y + this.tileHeight - 2;
+    const pulse = 0.8 + Math.sin(performance.now() / 380 + this.x * 0.05) * 0.08;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const aura = ctx.createRadialGradient(centerX, baseY, 2, centerX, baseY, 16);
+    aura.addColorStop(0, hexToRgba(this.color, 0.34));
+    aura.addColorStop(1, hexToRgba(this.color, 0));
+    ctx.fillStyle = aura;
+    ctx.beginPath();
+    ctx.ellipse(centerX, baseY, 16 * pulse, 7 * pulse, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  private drawPortraitBadge(ctx: CanvasRenderingContext2D) {
+    const badgeX = this.x + this.tileWidth / 2 - 20;
+    const badgeY = this.y - 22;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(8, 12, 28, 0.92)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = this.color;
+    ctx.stroke();
+
+    if (this.portraitLoaded && this.portraitImage) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, 8.5, 0, Math.PI * 2);
+      ctx.clip();
+      const source = coverCrop(this.portraitImage, 17, 17, this.portraitFocus);
+      ctx.drawImage(
+        this.portraitImage,
+        source.sx,
+        source.sy,
+        source.sw,
+        source.sh,
+        badgeX - 8.5,
+        badgeY - 8.5,
+        17,
+        17
+      );
+      ctx.restore();
+    } else {
+      ctx.fillStyle = hexToRgba(this.color, 0.24);
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  private drawEnergyArc(ctx: CanvasRenderingContext2D) {
+    const centerX = this.x + this.tileWidth / 2;
+    const centerY = this.y + 7;
+    const energy = Math.max(0.12, this.energy);
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = hexToRgba(this.color, 0.75);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 14, -Math.PI * 0.8, -Math.PI * 0.8 + Math.PI * 1.6 * energy);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 export class CitizenLayer implements RenderLayer {
@@ -265,4 +359,33 @@ function inferRoomId(location: string): string {
 
 function easeInOut(value: number): number {
   return value * value * (3 - 2 * value);
+}
+
+function coverCrop(image: HTMLImageElement, targetWidth: number, targetHeight: number, focus: string) {
+  const imageRatio = image.width / image.height;
+  const targetRatio = targetWidth / targetHeight;
+
+  let sw = image.width;
+  let sh = image.height;
+  if (imageRatio > targetRatio) {
+    sw = image.height * targetRatio;
+  } else {
+    sh = image.width / targetRatio;
+  }
+
+  const focusX = focus.includes('left') ? 0.3 : focus.includes('right') ? 0.7 : 0.5;
+  const focusY = focus.includes('top') ? 0.3 : focus.includes('bottom') ? 0.7 : 0.5;
+  const sx = Math.max(0, Math.min(image.width - sw, image.width * focusX - sw / 2));
+  const sy = Math.max(0, Math.min(image.height - sh, image.height * focusY - sh / 2));
+
+  return { sx, sy, sw, sh };
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map((char) => char + char).join('')
+    : normalized;
+  const int = Number.parseInt(value, 16);
+  return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
 }

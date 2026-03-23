@@ -7,6 +7,12 @@ export interface AnimationDef {
   row: number;        // 行号
   frames: number;     // 帧数
   speed: number;      // 播放速度（秒/帧）
+  loop?: boolean;
+  holdLastFrame?: boolean;
+  frameDurations?: number[];
+  offsetX?: number;
+  offsetY?: number;
+  scale?: number;
 }
 
 export interface SpriteSheetConfig {
@@ -14,4 +20,7 @@ export interface SpriteSheetConfig {
   animations: Record<string, AnimationDef>;
   frameWidth: number;
   frameHeight: number;
+  defaultScale?: number;
+  defaultOffsetX?: number;
+  defaultOffsetY?: number;
 }
