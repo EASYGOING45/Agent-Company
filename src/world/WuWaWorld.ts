@@ -366,17 +366,20 @@ function createHuanglongScene(): SceneConfig {
     [5, 3, 'desk'],
     [6, 3, 'chair'],
     [8, 3, 'bookshelf'],
+    [9, 3, 'lamp'],
     [10, 2, 'board'],
     [11, 3, 'shelf'],
     [12, 3, 'lamp'],
     [4, 7, 'table'],
     [5, 7, 'chair'],
     [6, 7, 'chair'],
+    [7, 7, 'plant'],
     [11, 7, 'divider'],
     [12, 7, 'window'],
     [13, 7, 'plant'],
     [3, 9, 'couch'],
     [4, 9, 'table'],
+    [5, 9, 'lamp'],
     [10, 9, 'bench'],
   ] as const) {
     decor[y][x] = asset;
@@ -419,12 +422,14 @@ function createBlackShoresScene(): SceneConfig {
   for (const [x, y, asset] of [
     [7, 3, 'holo'],
     [8, 3, 'lamp'],
+    [9, 3, 'plant'],
     [11, 4, 'board'],
     [12, 4, 'divider'],
     [3, 7, 'pod'],
     [4, 8, 'pod'],
     [6, 8, 'couch'],
     [7, 8, 'table'],
+    [8, 8, 'chair'],
     [10, 8, 'plant'],
     [12, 8, 'couch'],
     [13, 8, 'plant'],
@@ -469,12 +474,15 @@ function createRinascitaScene(): SceneConfig {
   addDecorRow(decor, walkable, 10, 3, 3, ['board', 'archive', 'lamp']);
 
   for (const [x, y, asset] of [
+    [4, 4, 'plant'],
     [6, 4, 'table'],
     [7, 4, 'chair'],
     [8, 4, 'chair'],
+    [9, 4, 'lamp'],
     [4, 8, 'bench'],
     [5, 8, 'plant'],
     [8, 8, 'table'],
+    [9, 8, 'chair'],
     [11, 8, 'window'],
     [12, 8, 'window'],
     [13, 8, 'plant'],
@@ -517,10 +525,12 @@ function createFrontierScene(): SceneConfig {
   addDecorRow(decor, walkable, 9, 3, 3, ['board', 'pillar', 'lamp']);
 
   for (const [x, y, asset] of [
+    [4, 7, 'crate'],
     [5, 8, 'bar'],
     [6, 8, 'chair'],
     [8, 8, 'crate'],
     [10, 8, 'table'],
+    [11, 8, 'chair'],
     [12, 8, 'bench'],
     [13, 8, 'plant'],
   ] as const) {

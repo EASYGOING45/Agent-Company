@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>鸣潮元宇宙 - 索拉里斯大陆</title>
+  <title>Agent-Company Isometric Atelier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg-0: #050816;
-      --bg-1: #0b1226;
-      --bg-2: #101a35;
-      --line: rgba(115, 190, 255, 0.18);
-      --text: #eaf3ff;
-      --muted: rgba(234, 243, 255, 0.6);
-      --accent: #64d5ff;
-      --accent-soft: rgba(100, 213, 255, 0.22);
-      --accent-secondary: #2d6fb3;
-      --accent-gold: #f3c56b;
-      --region-wash: rgba(100, 213, 255, 0.08);
+      --bg-0: #171117;
+      --bg-1: #221a22;
+      --bg-2: #2f2530;
+      --line: rgba(236, 214, 188, 0.16);
+      --text: #fff5eb;
+      --muted: rgba(255, 245, 235, 0.66);
+      --accent: #d6b07f;
+      --accent-soft: rgba(214, 176, 127, 0.24);
+      --accent-secondary: #8e6f50;
+      --accent-gold: #f2cb96;
+      --region-wash: rgba(214, 176, 127, 0.08);
       --scene-image: none;
     }
     body {
@@ -28,11 +28,12 @@
       color: var(--text);
       font-family: "Noto Sans SC", sans-serif;
       background:
-        linear-gradient(180deg, rgba(4, 8, 20, 0.68), rgba(4, 8, 20, 0.94)),
+        radial-gradient(circle at top, rgba(239, 196, 145, 0.14), transparent 28%),
+        linear-gradient(180deg, rgba(18, 12, 16, 0.68), rgba(18, 12, 16, 0.96)),
         var(--scene-image) center/cover fixed no-repeat,
         radial-gradient(circle at top, var(--region-wash), transparent 32%),
         radial-gradient(circle at 80% 20%, rgba(243, 197, 107, 0.12), transparent 24%),
-        linear-gradient(180deg, #040713 0%, #070d1c 42%, #040814 100%);
+        linear-gradient(180deg, #130d12 0%, #1d151b 42%, #140e15 100%);
       overflow-x: hidden;
     }
     body::before {
@@ -41,7 +42,7 @@
       inset: 0;
       pointer-events: none;
       background:
-        repeating-linear-gradient(180deg, rgba(110, 210, 255, 0.04) 0, rgba(110, 210, 255, 0.04) 1px, transparent 1px, transparent 3px),
+        repeating-linear-gradient(180deg, rgba(255, 229, 196, 0.04) 0, rgba(255, 229, 196, 0.04) 1px, transparent 1px, transparent 4px),
         linear-gradient(90deg, rgba(255,255,255,0.02), transparent 20%, transparent 80%, rgba(255,255,255,0.02));
       mix-blend-mode: screen;
       opacity: 0.55;
@@ -60,11 +61,12 @@
       padding: 1.5rem 2rem 0;
     }
     .brand h1 {
-      font-family: "Orbitron", sans-serif;
-      font-size: clamp(1.8rem, 3vw, 2.8rem);
-      letter-spacing: 0.12em;
+      font-family: "Press Start 2P", cursive;
+      font-size: clamp(1.1rem, 2vw, 1.8rem);
+      letter-spacing: 0.08em;
       color: var(--accent);
-      text-shadow: 0 0 22px var(--accent-soft);
+      text-shadow: 0 3px 0 rgba(52, 34, 20, 0.7);
+      line-height: 1.5;
     }
     .brand p {
       margin-top: 0.45rem;
@@ -81,9 +83,11 @@
       min-width: 130px;
       padding: 0.9rem 1rem;
       border: 1px solid var(--line);
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(12, 18, 38, 0.86), rgba(9, 15, 29, 0.72));
-      backdrop-filter: blur(14px);
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(54, 40, 43, 0.94), rgba(34, 24, 28, 0.92)),
+        linear-gradient(90deg, rgba(255,255,255,0.04), transparent);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 14px 30px rgba(0,0,0,0.22);
     }
     .metric-label {
       color: var(--muted);
@@ -95,8 +99,9 @@
       display: block;
       margin-top: 0.3rem;
       color: var(--accent);
-      font-family: "Orbitron", sans-serif;
+      font-family: "Press Start 2P", cursive;
       font-size: 1.05rem;
+      line-height: 1.35;
     }
     main {
       display: grid;
@@ -109,19 +114,18 @@
     }
     .stage, .sidebar-card {
       border: 1px solid var(--line);
-      border-radius: 22px;
+      border-radius: 14px;
       background:
-        linear-gradient(180deg, rgba(13, 20, 40, 0.88), rgba(8, 13, 24, 0.82)),
+        linear-gradient(180deg, rgba(46, 34, 38, 0.92), rgba(28, 20, 24, 0.9)),
         radial-gradient(circle at top right, var(--region-wash), transparent 42%);
-      box-shadow: 0 30px 80px rgba(1, 6, 18, 0.42);
-      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 50px rgba(10, 6, 8, 0.34);
     }
     .stage {
       padding: 1rem;
     }
     .stage-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 240px;
+      grid-template-columns: minmax(0, 1fr) 220px;
       gap: 1rem;
       margin-bottom: 1rem;
     }
@@ -149,7 +153,7 @@
     }
     .room-btn, .control-btn {
       border: 1px solid var(--line);
-      background: rgba(11, 18, 38, 0.9);
+      background: rgba(43, 31, 35, 0.9);
       color: var(--text);
       border-radius: 999px;
       padding: 0.7rem 1rem;
@@ -169,9 +173,9 @@
       display: grid;
       place-items: center;
       padding: 0.75rem;
-      border-radius: 18px;
+      border-radius: 12px;
       background:
-        linear-gradient(180deg, rgba(13, 20, 40, 0.9), rgba(8, 12, 22, 0.92)),
+        linear-gradient(180deg, rgba(35, 26, 30, 0.92), rgba(22, 16, 18, 0.95)),
         radial-gradient(circle at top, var(--accent-soft), transparent 45%),
         linear-gradient(135deg, rgba(255,255,255,0.03), transparent 42%);
       overflow: hidden;
@@ -181,7 +185,7 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      border-radius: 18px;
+      border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.04);
       box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.28);
     }
@@ -190,7 +194,7 @@
       position: absolute;
       inset: 10px;
       pointer-events: none;
-      border-radius: 14px;
+      border-radius: 8px;
       border: 1px solid rgba(255,255,255,0.03);
       background:
         linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent),
@@ -228,9 +232,10 @@
       padding: 1rem;
     }
     .scene-copy strong {
-      font-family: "Orbitron", sans-serif;
+      font-family: "Press Start 2P", cursive;
       color: var(--accent-gold);
-      font-size: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.5;
     }
     .scene-copy span {
       margin-top: 0.35rem;

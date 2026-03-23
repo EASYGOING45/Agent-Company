@@ -1,10 +1,16 @@
 /**
- * 鸣潮元宇宙 - 场景系统
- * Tile 地图 + 房间切换 + 程序化瓦片兜底
+ * 鸣潮元宇宙 - 等距场景系统
+ * Miniverse 风格的室内像素房间
  */
 
 import { Pathfinder } from './Pathfinder.ts';
-import type { RenderLayer } from '../canvas/Renderer.ts';
+import {
+  buildProjection,
+  projectIso,
+  setCurrentProjection,
+  type IsometricProjection,
+  type RenderLayer,
+} from '../canvas/Renderer.ts';
 
 export const DEADSPACE = '';
 
@@ -27,11 +33,16 @@ export interface SceneConfig {
   backdropPosition?: string;
 }
 
+interface RenderCommand {
+  depth: number;
+  draw: () => void;
+}
+
 const THEME_TINT: Record<NonNullable<SceneConfig['theme']>, string> = {
   blue: '#64d5ff',
   green: '#87f0c7',
-  warm: '#ffb27a',
-  purple: '#9f8cff',
+  warm: '#f3c56b',
+  purple: '#b59bff',
 };
 
 export class Scene implements RenderLayer {
@@ -95,308 +106,448 @@ export class Scene implements RenderLayer {
   }
 
   render(ctx: CanvasRenderingContext2D, _delta: number) {
-    const width = this.config.tileWidth * this.config.walkable[0].length;
-    const height = this.config.tileHeight * this.config.walkable.length;
+    const cols = this.config.walkable[0].length;
+    const rows = this.config.walkable.length;
+    const projection = buildProjection(ctx.canvas.width, ctx.canvas.height, cols, rows);
+    setCurrentProjection(projection);
 
-    ctx.fillStyle = '#040816';
-    ctx.fillRect(0, 0, width, height);
-    this.drawBackdrop(ctx, width, height);
-    this.drawAtmosphere(ctx, width, height);
+    ctx.fillStyle = '#120f16';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    this.drawBackdrop(ctx, projection);
+    this.drawAtmosphere(ctx, projection);
 
-    const { tileWidth, tileHeight, layers } = this.config;
-    for (const layer of layers) {
-      for (let row = 0; row < layer.length; row++) {
-        for (let col = 0; col < layer[row].length; col++) {
+    const commands: RenderCommand[] = [];
+    const { layers } = this.config;
+    for (let layerIndex = 0; layerIndex < layers.length; layerIndex += 1) {
+      const layer = layers[layerIndex];
+      for (let row = 0; row < layer.length; row += 1) {
+        for (let col = 0; col < layer[row].length; col += 1) {
           const key = layer[row][col];
-          if (key === DEADSPACE) {
-            continue;
-          }
-
-          const x = col * tileWidth;
-          const y = row * tileHeight;
-          const baseKey = key.startsWith('wall') ? 'wall' : key.startsWith('floor') ? 'floor' : key;
-          const img = this.loaded ? this.tileImages.get(baseKey) : undefined;
-
-          if (img && (baseKey === 'floor' || baseKey === 'wall')) {
-            ctx.save();
-            ctx.globalAlpha = baseKey === 'floor' ? 0.35 : 0.5;
-            ctx.drawImage(img, x, y, tileWidth, tileHeight);
-            ctx.restore();
-          }
-
-          if (!key.startsWith('floor') && !key.startsWith('wall') && key !== 'window') {
-            this.drawPropShadow(ctx, x, y, tileWidth, tileHeight);
-          }
-          this.drawProceduralTile(ctx, key, x, y, tileWidth, tileHeight);
+          if (key === DEADSPACE) continue;
+          commands.push(...this.buildTileCommands(ctx, key, col, row, layerIndex, projection));
         }
       }
     }
-  }
 
-  private drawAtmosphere(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    const tint = THEME_TINT[this.config.theme ?? 'blue'];
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, 'rgba(7, 14, 34, 0.46)');
-    gradient.addColorStop(0.45, 'rgba(7, 12, 26, 0.58)');
-    gradient.addColorStop(1, 'rgba(3, 6, 18, 0.9)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    const glow = ctx.createRadialGradient(width * 0.6, height * 0.3, 16, width * 0.6, height * 0.3, width * 0.75);
-    glow.addColorStop(0, `${tint}26`);
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, height);
-
-    const windowGlow = ctx.createLinearGradient(0, 0, width, height * 0.75);
-    windowGlow.addColorStop(0, `${tint}1f`);
-    windowGlow.addColorStop(0.35, `${tint}08`);
-    windowGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = windowGlow;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.strokeStyle = `${tint}35`;
-    ctx.lineWidth = 1;
-    for (let x = 16; x < width; x += 48) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x - 20, height);
-      ctx.stroke();
+    commands.sort((a, b) => a.depth - b.depth);
+    for (const command of commands) {
+      command.draw();
     }
-    ctx.restore();
   }
 
-  private drawBackdrop(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    if (!this.backdropImage) return;
-
-    const source = cropBackdrop(this.backdropImage, width, height, this.config.backdropPosition ?? 'center');
-    ctx.save();
-    ctx.globalAlpha = 0.32;
-    ctx.filter = 'saturate(0.95) contrast(1.02)';
-    ctx.drawImage(this.backdropImage, source.sx, source.sy, source.sw, source.sh, 0, 0, width, height);
-    ctx.restore();
-  }
-
-  private drawProceduralTile(
+  private buildTileCommands(
     ctx: CanvasRenderingContext2D,
     key: string,
-    x: number,
-    y: number,
-    tileWidth: number,
-    tileHeight: number
-  ) {
-    const theme = this.config.theme ?? 'blue';
-    const tint = THEME_TINT[theme];
-
-    if (key.startsWith('floor')) {
-      const palette = floorPalette(key, tint);
-      const inset = key === 'floor_carpet' ? 2 : 0;
-      ctx.fillStyle = palette.base;
-      ctx.fillRect(x + inset, y + inset, tileWidth - inset * 2, tileHeight - inset * 2);
-      const gloss = ctx.createLinearGradient(x, y, x + tileWidth, y + tileHeight);
-      gloss.addColorStop(0, palette.highlight);
-      gloss.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gloss;
-      ctx.fillRect(x + inset, y + inset, tileWidth - inset * 2, tileHeight - inset * 2);
-      ctx.strokeStyle = palette.line;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x + inset + 0.5, y + inset + 0.5, tileWidth - 1 - inset * 2, tileHeight - 1 - inset * 2);
-      ctx.fillStyle = palette.highlight;
-      ctx.fillRect(x + 2 + inset, y + 2 + inset, tileWidth - 4 - inset * 2, 2);
-      drawFloorPattern(ctx, key, x + inset, y + inset, tileWidth - inset * 2, tileHeight - inset * 2, palette);
-      if (key === 'floor_grid' || key === 'floor_ring' || key === 'floor_resonance') {
-        ctx.strokeStyle = palette.accent;
-        ctx.beginPath();
-        ctx.moveTo(x + tileWidth / 2, y + 3);
-        ctx.lineTo(x + tileWidth / 2, y + tileHeight - 3);
-        ctx.moveTo(x + 3, y + tileHeight / 2);
-        ctx.lineTo(x + tileWidth - 3, y + tileHeight / 2);
-        ctx.stroke();
-      }
-      if (key === 'floor_carpet') {
-        ctx.fillStyle = 'rgba(255, 201, 141, 0.18)';
-        ctx.fillRect(x + 4, y + 4, tileWidth - 8, tileHeight - 8);
-        ctx.strokeStyle = 'rgba(255, 226, 170, 0.26)';
-        ctx.strokeRect(x + 5.5, y + 5.5, tileWidth - 11, tileHeight - 11);
-      }
-      return;
-    }
+    col: number,
+    row: number,
+    layerIndex: number,
+    projection: IsometricProjection
+  ): RenderCommand[] {
+    const commands: RenderCommand[] = [];
+    const tint = THEME_TINT[this.config.theme ?? 'blue'];
+    const anchor = projectIso(col, row, 0, projection);
+    const baseDepth = row * 100 + col * 10 + layerIndex;
 
     if (key.startsWith('wall')) {
-      const wall = ctx.createLinearGradient(x, y, x, y + tileHeight);
-      const wallPalette = wallColors(key, tint);
-      wall.addColorStop(0, wallPalette.top);
-      wall.addColorStop(1, wallPalette.bottom);
-      ctx.fillStyle = wall;
-      ctx.fillRect(x, y, tileWidth, tileHeight);
-      drawWallPattern(ctx, key, x, y, tileWidth, tileHeight, wallPalette, tint);
-      ctx.fillStyle = tint;
-      ctx.globalAlpha = 0.12;
-      ctx.fillRect(x + 2, y + 4, tileWidth - 4, 4);
-      ctx.fillRect(x + 4, y + tileHeight - 8, tileWidth - 8, 2);
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-      ctx.strokeRect(x + 0.5, y + 0.5, tileWidth - 1, tileHeight - 1);
-      return;
+      commands.push({
+        depth: baseDepth + 1,
+        draw: () => this.drawWallBlock(ctx, anchor.x, anchor.y, key, tint, projection),
+      });
+      return commands;
     }
 
-    ctx.save();
-    if (key === 'desk' || key === 'console' || key === 'table' || key === 'bar') {
-      ctx.fillStyle = key === 'bar' ? '#5a4b3f' : '#2b3959';
-      ctx.fillRect(x + 3, y + 8, tileWidth - 6, tileHeight - 10);
-      ctx.fillStyle = tint;
-      ctx.globalAlpha = 0.35;
-      ctx.fillRect(x + 5, y + 10, tileWidth - 10, 4);
-      ctx.fillRect(x + 6, y + 18, tileWidth - 12, 2);
-      ctx.globalAlpha = 1;
-    } else if (key === 'bench' || key === 'chair' || key === 'couch') {
-      ctx.fillStyle = key === 'couch' ? '#8b5d47' : '#34466f';
-      ctx.fillRect(x + 4, y + 12, tileWidth - 8, tileHeight - 12);
-      ctx.fillStyle = 'rgba(255,255,255,0.16)';
-      ctx.fillRect(x + 6, y + 14, tileWidth - 12, 3);
-      ctx.fillRect(x + 8, y + 20, tileWidth - 16, 2);
-    } else if (key === 'window') {
-      ctx.fillStyle = '#15213d';
-      ctx.fillRect(x + 6, y + 4, tileWidth - 12, tileHeight - 8);
-      ctx.fillStyle = 'rgba(100, 213, 255, 0.45)';
-      ctx.fillRect(x + 8, y + 6, tileWidth - 16, tileHeight - 12);
-      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-      ctx.beginPath();
-      ctx.moveTo(x + tileWidth / 2, y + 7);
-      ctx.lineTo(x + tileWidth / 2, y + tileHeight - 7);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.1)';
-      ctx.fillRect(x + 9, y + 7, 5, tileHeight - 16);
-    } else if (key === 'board' || key === 'holo') {
-      ctx.fillStyle = '#101931';
-      ctx.fillRect(x + 5, y + 5, tileWidth - 10, tileHeight - 10);
-      ctx.strokeStyle = tint;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x + 6, y + 6, tileWidth - 12, tileHeight - 12);
-      ctx.globalAlpha = 0.4;
-      ctx.fillStyle = tint;
-      ctx.fillRect(x + 8, y + 9, tileWidth - 16, 2);
-      ctx.fillRect(x + 8, y + 15, tileWidth - 12, 2);
-      ctx.fillRect(x + 8, y + 21, tileWidth - 18, 2);
-      ctx.globalAlpha = 1;
-    } else if (key === 'pillar' || key === 'pod') {
-      ctx.fillStyle = '#222e4d';
-      ctx.fillRect(x + 8, y + 4, tileWidth - 16, tileHeight - 8);
-      ctx.fillStyle = tint;
-      ctx.globalAlpha = 0.25;
-      ctx.fillRect(x + 10, y + 8, tileWidth - 20, tileHeight - 16);
-      ctx.globalAlpha = 1;
-    } else if (key === 'bookshelf' || key === 'archive') {
-      ctx.fillStyle = key === 'archive' ? '#5f4a62' : '#4c362a';
-      ctx.fillRect(x + 5, y + 4, tileWidth - 10, tileHeight - 6);
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
-      for (let row = 0; row < 3; row += 1) {
-        ctx.fillRect(x + 7, y + 8 + row * 7, tileWidth - 14, 1);
+    commands.push({
+      depth: baseDepth,
+      draw: () => this.drawFloorDiamond(ctx, anchor.x, anchor.y, key, tint, projection),
+    });
+
+    if (key.startsWith('floor') || key === 'window') {
+      if (key === 'window') {
+        commands.push({
+          depth: baseDepth + 2,
+          draw: () => this.drawWindow(ctx, anchor.x, anchor.y, tint, projection),
+        });
       }
-      ctx.fillStyle = tint;
-      ctx.globalAlpha = key === 'archive' ? 0.24 : 0.12;
-      ctx.fillRect(x + 9, y + 10, tileWidth - 18, 3);
-      ctx.globalAlpha = 1;
-    } else if (key === 'plant') {
-      ctx.fillStyle = '#4c3426';
-      ctx.fillRect(x + 11, y + 21, 10, 6);
-      ctx.fillStyle = '#5baa6d';
-      ctx.fillRect(x + 12, y + 11, 8, 10);
-      ctx.fillRect(x + 8, y + 15, 6, 6);
-      ctx.fillRect(x + 18, y + 14, 6, 7);
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.fillRect(x + 13, y + 12, 2, 4);
-    } else if (key === 'lamp') {
-      ctx.fillStyle = '#21314d';
-      ctx.fillRect(x + 14, y + 8, 4, 16);
-      ctx.fillRect(x + 10, y + 22, 12, 4);
-      ctx.fillStyle = '#f8d38f';
-      ctx.fillRect(x + 11, y + 6, 10, 4);
-      ctx.globalCompositeOperation = 'screen';
-      const lampGlow = ctx.createRadialGradient(x + 16, y + 10, 1, x + 16, y + 10, 16);
-      lampGlow.addColorStop(0, 'rgba(248, 211, 143, 0.32)');
-      lampGlow.addColorStop(1, 'rgba(248, 211, 143, 0)');
-      ctx.fillStyle = lampGlow;
-      ctx.fillRect(x, y - 4, tileWidth, tileHeight);
-    } else if (key === 'divider' || key === 'shelf') {
-      ctx.fillStyle = '#2b3040';
-      ctx.fillRect(x + 7, y + 5, tileWidth - 14, tileHeight - 10);
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.fillRect(x + 9, y + 8, tileWidth - 18, 2);
-      ctx.fillRect(x + 9, y + 14, tileWidth - 18, 2);
-    } else if (key === 'crate') {
-      ctx.fillStyle = '#6f5330';
-      ctx.fillRect(x + 7, y + 10, tileWidth - 14, tileHeight - 10);
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.strokeRect(x + 7.5, y + 10.5, tileWidth - 15, tileHeight - 11);
+      return commands;
+    }
+
+    commands.push({
+      depth: baseDepth + 5,
+      draw: () => this.drawPropShadow(ctx, anchor.x, anchor.y, projection),
+    });
+    commands.push({
+      depth: baseDepth + 6,
+      draw: () => this.drawProp(ctx, anchor.x, anchor.y, key, tint, projection),
+    });
+    return commands;
+  }
+
+  private drawBackdrop(ctx: CanvasRenderingContext2D, projection: IsometricProjection) {
+    ctx.save();
+    const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+    gradient.addColorStop(0, 'rgba(17, 12, 22, 0.98)');
+    gradient.addColorStop(1, 'rgba(10, 8, 16, 0.98)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    if (this.backdropImage) {
+      const source = cropBackdrop(this.backdropImage, ctx.canvas.width, ctx.canvas.height, this.config.backdropPosition ?? 'center');
+      ctx.globalAlpha = 0.18;
+      ctx.filter = 'blur(1px) saturate(0.8)';
+      ctx.drawImage(this.backdropImage, source.sx, source.sy, source.sw, source.sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.filter = 'none';
+    }
+
+    const roomBack = projectIso(0, 0, -projection.elevation * 0.1, projection);
+    const roomLeft = projectIso(0, projection.mapHeight - 1, 0, projection);
+    const roomRight = projectIso(projection.mapWidth - 1, 0, 0, projection);
+
+    ctx.fillStyle = 'rgba(18, 14, 20, 0.96)';
+    ctx.beginPath();
+    ctx.moveTo(roomBack.x, roomBack.y - projection.elevation * 1.45);
+    ctx.lineTo(roomLeft.x, roomLeft.y - projection.elevation * 0.8);
+    ctx.lineTo(roomLeft.x, roomLeft.y + projection.tileHeight * 2.2);
+    ctx.lineTo(roomBack.x, roomBack.y + projection.tileHeight * 0.6);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(roomBack.x, roomBack.y - projection.elevation * 1.45);
+    ctx.lineTo(roomRight.x, roomRight.y - projection.elevation * 0.8);
+    ctx.lineTo(roomRight.x, roomRight.y + projection.tileHeight * 2.2);
+    ctx.lineTo(roomBack.x, roomBack.y + projection.tileHeight * 0.6);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(27, 21, 31, 0.96)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  private drawAtmosphere(ctx: CanvasRenderingContext2D, projection: IsometricProjection) {
+    const tint = THEME_TINT[this.config.theme ?? 'blue'];
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const glow = ctx.createRadialGradient(
+      projection.originX,
+      projection.originY + projection.tileHeight * 4,
+      16,
+      projection.originX,
+      projection.originY + projection.tileHeight * 4,
+      projection.tileWidth * 8
+    );
+    glow.addColorStop(0, `${tint}22`);
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    for (let i = 0; i < 5; i += 1) {
+      ctx.strokeStyle = `${tint}${(18 - i * 2).toString(16).padStart(2, '0')}`;
       ctx.beginPath();
-      ctx.moveTo(x + 9, y + 12);
-      ctx.lineTo(x + tileWidth - 9, y + tileHeight - 2);
-      ctx.moveTo(x + tileWidth - 9, y + 12);
-      ctx.lineTo(x + 9, y + tileHeight - 2);
+      ctx.moveTo(projection.originX - 220 + i * 38, projection.originY + 10);
+      ctx.lineTo(projection.originX + 30 + i * 42, projection.originY + 150);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  private drawPropShadow(ctx: CanvasRenderingContext2D, x: number, y: number, tileWidth: number, tileHeight: number) {
+  private drawFloorDiamond(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    key: string,
+    tint: string,
+    projection: IsometricProjection
+  ) {
+    const palette = floorPalette(key, tint);
+    const halfW = projection.tileWidth / 2;
+    const halfH = projection.tileHeight / 2;
+
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.24)';
     ctx.beginPath();
-    ctx.ellipse(x + tileWidth / 2, y + tileHeight - 2, tileWidth * 0.34, tileHeight * 0.12, 0, 0, Math.PI * 2);
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + halfW, y + halfH);
+    ctx.lineTo(x, y + projection.tileHeight);
+    ctx.lineTo(x - halfW, y + halfH);
+    ctx.closePath();
+    ctx.fillStyle = palette.base;
     ctx.fill();
+
+    ctx.strokeStyle = palette.line;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x, y + 2);
+    ctx.lineTo(x + halfW - 2, y + halfH);
+    ctx.lineTo(x, y + projection.tileHeight - 3);
+    ctx.strokeStyle = palette.highlight;
+    ctx.stroke();
+
+    drawFloorPattern(ctx, key, x, y, projection, palette);
+    ctx.restore();
+  }
+
+  private drawWallBlock(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    key: string,
+    tint: string,
+    projection: IsometricProjection
+  ) {
+    const palette = wallColors(key, tint);
+    const halfW = projection.tileWidth / 2;
+    const top = y - projection.elevation;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x + halfW, top + projection.tileHeight / 2);
+    ctx.lineTo(x, top + projection.tileHeight);
+    ctx.lineTo(x - halfW, top + projection.tileHeight / 2);
+    ctx.closePath();
+    ctx.fillStyle = palette.top;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x - halfW, top + projection.tileHeight / 2);
+    ctx.lineTo(x, top + projection.tileHeight);
+    ctx.lineTo(x, y + projection.tileHeight / 2);
+    ctx.lineTo(x - halfW, y);
+    ctx.closePath();
+    ctx.fillStyle = palette.left;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x + halfW, top + projection.tileHeight / 2);
+    ctx.lineTo(x, top + projection.tileHeight);
+    ctx.lineTo(x, y + projection.tileHeight / 2);
+    ctx.lineTo(x + halfW, y);
+    ctx.closePath();
+    ctx.fillStyle = palette.right;
+    ctx.fill();
+
+    ctx.strokeStyle = palette.line;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x + halfW, top + projection.tileHeight / 2);
+    ctx.lineTo(x, top + projection.tileHeight);
+    ctx.lineTo(x - halfW, top + projection.tileHeight / 2);
+    ctx.closePath();
+    ctx.stroke();
+    drawWallPattern(ctx, x, y, projection, palette);
+    ctx.restore();
+  }
+
+  private drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, tint: string, projection: IsometricProjection) {
+    ctx.save();
+    ctx.globalAlpha = 0.78;
+    ctx.fillStyle = 'rgba(196, 232, 255, 0.18)';
+    ctx.beginPath();
+    ctx.moveTo(x, y - projection.elevation * 0.92);
+    ctx.lineTo(x + 12, y - projection.elevation * 0.78);
+    ctx.lineTo(x, y - projection.elevation * 0.58);
+    ctx.lineTo(x - 12, y - projection.elevation * 0.78);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = `${tint}88`;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawPropShadow(ctx: CanvasRenderingContext2D, x: number, y: number, projection: IsometricProjection) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(5, 2, 6, 0.32)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + projection.tileHeight * 0.8, projection.tileWidth * 0.22, projection.tileHeight * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  private drawProp(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    key: string,
+    tint: string,
+    projection: IsometricProjection
+  ) {
+    const halfW = projection.tileWidth / 2;
+    const top = y - 10;
+
+    ctx.save();
+    switch (key) {
+      case 'desk':
+      case 'console':
+      case 'table':
+      case 'bar':
+        drawIsoBox(ctx, x, top, halfW - 5, 10, 18, key === 'bar' ? ['#7e5b3b', '#5b3f27', '#906845'] : ['#394d72', '#26354d', '#4a638f']);
+        if (key !== 'bar') {
+          ctx.fillStyle = `${tint}66`;
+          ctx.fillRect(x - 10, top + 8, 20, 2);
+        }
+        break;
+      case 'chair':
+      case 'bench':
+      case 'couch':
+        drawIsoBox(ctx, x, top + 6, halfW - 10, 8, key === 'couch' ? 14 : 10, key === 'couch' ? ['#9a6a57', '#68473a', '#b67d67'] : ['#566c8f', '#364760', '#6f86ab']);
+        break;
+      case 'bookshelf':
+      case 'archive':
+      case 'shelf':
+        drawTallCabinet(ctx, x, y - 8, key === 'archive' ? ['#705470', '#4c364c', '#8a6a8f'] : ['#73573f', '#4f3926', '#957154'], projection);
+        break;
+      case 'plant':
+        drawPlant(ctx, x, y - 2, projection);
+        break;
+      case 'lamp':
+        drawLamp(ctx, x, y - 4, projection, tint);
+        break;
+      case 'board':
+      case 'holo':
+        drawBoard(ctx, x, y - 18, key === 'holo' ? tint : '#f3c56b');
+        break;
+      case 'divider':
+      case 'pillar':
+      case 'pod':
+        drawTallCabinet(ctx, x, y - 6, ['#46506a', '#2f3648', '#5a6788'], projection);
+        break;
+      case 'crate':
+        drawIsoBox(ctx, x, top + 8, halfW - 11, 7, 10, ['#7c5c37', '#593f24', '#9c7852']);
+        break;
+      default:
+        drawIsoBox(ctx, x, top, halfW - 10, 8, 10, ['#42506f', '#2e394f', '#566586']);
+        break;
+    }
     ctx.restore();
   }
 }
 
+function drawIsoBox(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  halfWidth: number,
+  halfDepth: number,
+  height: number,
+  colors: [string, string, string]
+) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + halfWidth, y + halfDepth);
+  ctx.lineTo(x, y + halfDepth * 2);
+  ctx.lineTo(x - halfWidth, y + halfDepth);
+  ctx.closePath();
+  ctx.fillStyle = colors[2];
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(x - halfWidth, y + halfDepth);
+  ctx.lineTo(x, y + halfDepth * 2);
+  ctx.lineTo(x, y + halfDepth * 2 + height);
+  ctx.lineTo(x - halfWidth, y + halfDepth + height);
+  ctx.closePath();
+  ctx.fillStyle = colors[1];
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(x + halfWidth, y + halfDepth);
+  ctx.lineTo(x, y + halfDepth * 2);
+  ctx.lineTo(x, y + halfDepth * 2 + height);
+  ctx.lineTo(x + halfWidth, y + halfDepth + height);
+  ctx.closePath();
+  ctx.fillStyle = colors[0];
+  ctx.fill();
+}
+
+function drawTallCabinet(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  colors: [string, string, string],
+  projection: IsometricProjection
+) {
+  drawIsoBox(ctx, x, y - 16, projection.tileWidth / 2 - 8, 8, 26, colors);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  for (let i = 0; i < 3; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y + i * 6);
+    ctx.lineTo(x + 8, y + i * 6);
+    ctx.stroke();
+  }
+}
+
+function drawPlant(ctx: CanvasRenderingContext2D, x: number, y: number, projection: IsometricProjection) {
+  drawIsoBox(ctx, x, y + 8, projection.tileWidth / 2 - 16, 5, 8, ['#805437', '#5f3d28', '#9a6b4d']);
+  ctx.fillStyle = '#6db77a';
+  ctx.fillRect(x - 2, y - 18, 4, 16);
+  ctx.fillRect(x - 10, y - 12, 8, 8);
+  ctx.fillRect(x + 2, y - 14, 8, 9);
+  ctx.fillRect(x - 4, y - 22, 8, 10);
+}
+
+function drawLamp(ctx: CanvasRenderingContext2D, x: number, y: number, projection: IsometricProjection, tint: string) {
+  ctx.fillStyle = '#d7b37d';
+  ctx.fillRect(x - 6, y - 18, 12, 6);
+  ctx.fillStyle = '#4f5668';
+  ctx.fillRect(x - 1, y - 12, 2, 18);
+  ctx.fillRect(x - 6, y + 6, 12, 2);
+  ctx.globalCompositeOperation = 'screen';
+  const glow = ctx.createRadialGradient(x, y - 15, 2, x, y - 15, projection.tileWidth * 0.8);
+  glow.addColorStop(0, `${tint}44`);
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - 40, y - 50, 80, 70);
+}
+
+function drawBoard(ctx: CanvasRenderingContext2D, x: number, y: number, accent: string) {
+  ctx.fillStyle = '#1c2233';
+  ctx.fillRect(x - 13, y - 16, 26, 18);
+  ctx.strokeStyle = `${accent}99`;
+  ctx.strokeRect(x - 12.5, y - 15.5, 25, 17);
+  ctx.fillStyle = `${accent}66`;
+  ctx.fillRect(x - 9, y - 12, 18, 2);
+  ctx.fillRect(x - 9, y - 7, 14, 2);
+}
+
 function floorPalette(key: string, tint: string) {
-  if (key === 'floor_green' || key === 'floor_resonance') {
+  if (key.includes('plank')) {
     return {
-      base: '#0c1b24',
-      line: 'rgba(135, 240, 199, 0.14)',
-      highlight: 'rgba(135, 240, 199, 0.14)',
-      accent: 'rgba(135, 240, 199, 0.28)',
+      base: key === 'floor_plank_dark' ? '#4a4038' : '#6b5644',
+      line: 'rgba(45, 28, 16, 0.32)',
+      highlight: 'rgba(255, 225, 192, 0.22)',
     };
   }
-  if (key === 'floor_warm' || key === 'floor_carpet') {
+  if (key.includes('carpet')) {
     return {
-      base: '#201723',
-      line: 'rgba(255, 178, 122, 0.14)',
-      highlight: 'rgba(255, 178, 122, 0.12)',
-      accent: 'rgba(255, 178, 122, 0.25)',
+      base: '#7d4a4a',
+      line: 'rgba(255, 217, 178, 0.2)',
+      highlight: 'rgba(255, 240, 220, 0.18)',
     };
   }
-  if (key === 'floor_purple' || key === 'floor_ring') {
+  if (key.includes('purple') || key.includes('ring')) {
     return {
-      base: '#15132a',
-      line: 'rgba(159, 140, 255, 0.14)',
-      highlight: 'rgba(159, 140, 255, 0.12)',
-      accent: 'rgba(159, 140, 255, 0.32)',
+      base: '#4d4365',
+      line: 'rgba(215, 203, 255, 0.18)',
+      highlight: 'rgba(255, 255, 255, 0.12)',
     };
   }
-  if (key === 'floor_tile_warm') {
+  if (key.includes('green') || key.includes('resonance')) {
     return {
-      base: '#271c21',
-      line: 'rgba(255, 199, 140, 0.16)',
-      highlight: 'rgba(255, 221, 177, 0.12)',
-      accent: 'rgba(255, 178, 122, 0.3)',
+      base: '#476359',
+      line: 'rgba(207, 255, 229, 0.16)',
+      highlight: 'rgba(255, 255, 255, 0.12)',
     };
   }
-  if (key === 'floor_plank' || key === 'floor_plank_dark') {
+  if (key.includes('warm') || key.includes('tile')) {
     return {
-      base: key === 'floor_plank_dark' ? '#151c29' : '#172438',
-      line: 'rgba(194, 214, 255, 0.08)',
-      highlight: 'rgba(210, 226, 255, 0.08)',
-      accent: `${tint}26`,
+      base: '#765846',
+      line: 'rgba(255, 229, 189, 0.18)',
+      highlight: 'rgba(255, 247, 231, 0.14)',
     };
   }
   return {
-    base: '#0b1730',
-    line: 'rgba(100, 213, 255, 0.12)',
-    highlight: 'rgba(100, 213, 255, 0.12)',
-    accent: `${tint}33`,
+    base: '#4f5872',
+    line: `${tint}44`,
+    highlight: 'rgba(255,255,255,0.14)',
   };
 }
 
@@ -405,79 +556,52 @@ function drawFloorPattern(
   key: string,
   x: number,
   y: number,
-  width: number,
-  height: number,
+  projection: IsometricProjection,
   palette: ReturnType<typeof floorPalette>
 ) {
-  ctx.save();
-  if (key === 'floor_plank' || key === 'floor_plank_dark') {
-    ctx.strokeStyle = palette.line;
-    for (let offset = 5; offset < width; offset += 7) {
-      ctx.beginPath();
-      ctx.moveTo(x + offset, y + 2);
-      ctx.lineTo(x + offset, y + height - 2);
-      ctx.stroke();
-    }
-  } else if (key === 'floor_tile_warm') {
-    ctx.strokeStyle = palette.line;
-    ctx.beginPath();
-    ctx.moveTo(x + width / 2, y + 2);
-    ctx.lineTo(x + width / 2, y + height - 2);
-    ctx.moveTo(x + 2, y + height / 2);
-    ctx.lineTo(x + width - 2, y + height / 2);
-    ctx.stroke();
+  ctx.strokeStyle = palette.line;
+  ctx.beginPath();
+  if (key.includes('plank')) {
+    ctx.moveTo(x - 8, y + projection.tileHeight * 0.52);
+    ctx.lineTo(x + 8, y + projection.tileHeight * 0.85);
+    ctx.moveTo(x - 13, y + projection.tileHeight * 0.35);
+    ctx.lineTo(x + 3, y + projection.tileHeight * 0.68);
+  } else if (key.includes('ring') || key.includes('resonance')) {
+    ctx.ellipse(x, y + projection.tileHeight / 2, 8, 4, 0, 0, Math.PI * 2);
+  } else if (key.includes('tile')) {
+    ctx.moveTo(x, y + 4);
+    ctx.lineTo(x + 10, y + projection.tileHeight / 2);
+    ctx.lineTo(x, y + projection.tileHeight - 4);
+    ctx.lineTo(x - 10, y + projection.tileHeight / 2);
+    ctx.closePath();
   } else {
-    ctx.fillStyle = palette.highlight;
-    ctx.fillRect(x + 4, y + height - 6, width - 8, 1);
+    ctx.moveTo(x - 10, y + projection.tileHeight / 2);
+    ctx.lineTo(x + 10, y + projection.tileHeight / 2);
   }
-  ctx.restore();
+  ctx.stroke();
 }
 
 function wallColors(key: string, tint: string) {
-  if (key === 'wall_green') return { top: '#24394b', bottom: '#162531', groove: 'rgba(135, 240, 199, 0.16)', accent: tint };
-  if (key === 'wall_purple') return { top: '#2b2942', bottom: '#17172b', groove: 'rgba(159, 140, 255, 0.16)', accent: tint };
-  if (key === 'wall_warm') return { top: '#41352e', bottom: '#211b1d', groove: 'rgba(243, 197, 107, 0.18)', accent: tint };
-  return { top: '#253252', bottom: '#151d31', groove: 'rgba(100, 213, 255, 0.14)', accent: tint };
+  if (key === 'wall_green') return { top: '#7e6d5c', left: '#5b4e40', right: '#6b5b4a', line: 'rgba(238, 255, 246, 0.14)', accent: tint };
+  if (key === 'wall_purple') return { top: '#7d7081', left: '#5b4f5f', right: '#6a5d6f', line: 'rgba(248, 239, 255, 0.14)', accent: tint };
+  if (key === 'wall_warm') return { top: '#8c775d', left: '#65553e', right: '#75644b', line: 'rgba(255, 244, 229, 0.14)', accent: tint };
+  return { top: '#68768a', left: '#495463', right: '#576374', line: 'rgba(232, 244, 255, 0.16)', accent: tint };
 }
 
 function drawWallPattern(
   ctx: CanvasRenderingContext2D,
-  key: string,
   x: number,
   y: number,
-  tileWidth: number,
-  tileHeight: number,
-  palette: ReturnType<typeof wallColors>,
-  tint: string
+  projection: IsometricProjection,
+  palette: ReturnType<typeof wallColors>
 ) {
-  ctx.save();
-  ctx.strokeStyle = palette.groove;
-  if (key === 'wall_warm') {
-    for (let row = 6; row < tileHeight; row += 8) {
-      ctx.beginPath();
-      ctx.moveTo(x + 2, y + row);
-      ctx.lineTo(x + tileWidth - 2, y + row);
-      ctx.stroke();
-    }
-  } else {
-    for (let row = 8; row < tileHeight; row += 8) {
-      ctx.beginPath();
-      ctx.moveTo(x + 2, y + row);
-      ctx.lineTo(x + tileWidth - 2, y + row);
-      ctx.stroke();
-    }
-    for (let col = 8; col < tileWidth; col += 12) {
-      ctx.beginPath();
-      ctx.moveTo(x + col, y + 2);
-      ctx.lineTo(x + col, y + tileHeight - 2);
-      ctx.stroke();
-    }
+  ctx.strokeStyle = palette.line;
+  for (let step = 0; step < 3; step += 1) {
+    ctx.beginPath();
+    ctx.moveTo(x - projection.tileWidth / 2 + 6, y - projection.elevation + 10 + step * 8);
+    ctx.lineTo(x + projection.tileWidth / 2 - 6, y - projection.elevation + 10 + step * 8);
+    ctx.stroke();
   }
-
-  ctx.globalAlpha = 0.08;
-  ctx.fillStyle = tint;
-  ctx.fillRect(x + 3, y + 3, tileWidth - 6, 3);
-  ctx.restore();
 }
 
 function cropBackdrop(image: HTMLImageElement, targetWidth: number, targetHeight: number, focus: string) {

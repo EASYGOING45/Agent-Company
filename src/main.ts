@@ -218,12 +218,13 @@ class WuWaVerse {
       citizen.updateState(normalizeState(agent.state), agent.task, agent.energy, region);
 
       if (prevState !== citizen.state) {
+        const anchor = citizen.getScreenAnchor();
         if (citizen.state === 'working' && agent.task) {
-          this.speechBubbles.show(citizen.x + 16, citizen.y, agent.task, 4);
+          this.speechBubbles.show(anchor.x, anchor.y, agent.task, 4);
         } else if (citizen.state === 'speaking' && agent.task) {
-          this.speechBubbles.show(citizen.x + 16, citizen.y, agent.task, 5);
+          this.speechBubbles.show(anchor.x, anchor.y, agent.task, 5);
         } else if (citizen.state === 'error') {
-          this.particles.emitExclamation(citizen.x + 16, citizen.y);
+          this.particles.emitExclamation(anchor.x, anchor.y);
         }
       }
     }
@@ -240,13 +241,14 @@ class WuWaVerse {
 
     if (timer > 0.18) {
       this.particleTimers.set(citizen.agentId, 0);
-      this.particles.emitNoise(citizen.x + 16, citizen.y + 14, citizen.color);
+      const anchor = citizen.getScreenAnchor();
+      this.particles.emitNoise(anchor.x, anchor.floorY - 6, citizen.color);
       if (citizen.state === 'sleeping') {
-        this.particles.emitZzz(citizen.x + 16, citizen.y);
+        this.particles.emitZzz(anchor.x, anchor.y);
       } else if (citizen.state === 'thinking') {
-        this.particles.emitThought(citizen.x + 16, citizen.y);
+        this.particles.emitThought(anchor.x, anchor.y);
       } else if (citizen.state === 'error') {
-        this.particles.emitExclamation(citizen.x + 16, citizen.y);
+        this.particles.emitExclamation(anchor.x, anchor.y);
       }
     }
   }
@@ -262,7 +264,8 @@ class WuWaVerse {
     this.refreshSelectedCitizen();
     const snapshot = this.agents.get(target.agentId);
     const status = snapshot?.task ? `${target.name}: ${snapshot.task}` : `${target.name}: ${target.state}`;
-    this.speechBubbles.show(target.x + 16, target.y, status, 3);
+    const anchor = target.getScreenAnchor();
+    this.speechBubbles.show(anchor.x, anchor.y, status, 3);
   }
 
   private async switchRegion(region: RegionId) {
@@ -449,22 +452,24 @@ function createWuWaSpriteConfig(primary: string, secondary: string, shadow: stri
       walk_left: { sheet: 'walk', row: 2, frames: 4, speed: 0.12, offsetY: -2 },
       walk_right: { sheet: 'walk', row: 3, frames: 4, speed: 0.12, offsetY: -2 },
     },
-    frameWidth: 32,
-    frameHeight: 48,
-    defaultOffsetY: -1,
+    frameWidth: 24,
+    frameHeight: 24,
+    defaultScale: 1,
+    defaultOffsetY: -2,
   };
 }
 
 function createWuWaSpriteSheet(primary: string, secondary: string, shadow: string, type: 'walk' | 'actions') {
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = type === 'walk' ? 192 : 336;
+  canvas.width = 96;
+  canvas.height = type === 'walk' ? 96 : 168;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
+  ctx.imageSmoothingEnabled = false;
 
-  for (let row = 0; row < canvas.height / 48; row += 1) {
+  for (let row = 0; row < canvas.height / 24; row += 1) {
     for (let frame = 0; frame < 4; frame += 1) {
-      drawFrame(ctx, frame * 32, row * 48, primary, secondary, shadow, row, frame, type);
+      drawFrame(ctx, frame * 24, row * 24, primary, secondary, shadow, row, frame, type);
     }
   }
 
@@ -482,85 +487,69 @@ function drawFrame(
   frame: number,
   type: 'walk' | 'actions'
 ) {
-  const bob = type === 'walk' ? Math.sin((frame / 4) * Math.PI * 2) * 1.5 : Math.sin(((frame + row) / 4) * Math.PI * 2) * 0.6;
-  const sway = type === 'walk' ? (frame % 2 === 0 ? -1.5 : 1.5) : 0;
+  const bob = type === 'walk' ? (frame % 2 === 0 ? 0 : 1) : row === 5 ? 1 : 0;
+  const sway = type === 'walk' ? (frame % 2 === 0 ? -1 : 1) : 0;
   const faceLeft = row === 2;
   const faceRight = row === 3;
   const faceUp = row === 1;
 
   ctx.save();
   ctx.translate(x, y + bob);
+  ctx.imageSmoothingEnabled = false;
 
-  const cape = ctx.createLinearGradient(8, 18, 24, 42);
-  cape.addColorStop(0, `${primary}dd`);
-  cape.addColorStop(1, `${shadow}ee`);
-  ctx.fillStyle = cape;
-  ctx.beginPath();
-  ctx.moveTo(10, 16);
-  ctx.lineTo(22, 16);
-  ctx.lineTo(25 + sway * 0.3, 40);
-  ctx.lineTo(7 + sway * 0.3, 40);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = secondary;
-  ctx.beginPath();
-  ctx.ellipse(16, 11, 7, 8, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = primary;
-  ctx.fillRect(11, 18, 10, 14);
-  ctx.fillStyle = `${primary}bb`;
-  ctx.fillRect(12, 16, 8, 3);
-  ctx.fillRect(9, 21, 2, 9);
-  ctx.fillRect(21, 21, 2, 9);
+  const legOffset = type === 'walk' ? (frame % 2 === 0 ? 0 : 1) : 0;
+  const armShift = type === 'actions' && row === 6 ? 1 : 0;
 
   ctx.fillStyle = shadow;
-  ctx.fillRect(11 + sway * 0.2, 31, 4, 10);
-  ctx.fillRect(17 - sway * 0.2, 31, 4, 10);
+  ctx.fillRect(9, 17, 2, 4);
+  ctx.fillRect(13, 17 + legOffset, 2, 4 - legOffset);
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(16, 18);
-  ctx.lineTo(16, 30);
-  ctx.stroke();
-  ctx.strokeStyle = `${secondary}88`;
-  ctx.beginPath();
-  ctx.moveTo(12, 20);
-  ctx.lineTo(20, 20);
-  ctx.stroke();
+  ctx.fillStyle = primary;
+  ctx.fillRect(8 + sway, 10, 8, 8);
+  ctx.fillRect(7 + sway - armShift, 11, 2, 5);
+  ctx.fillRect(16 + sway + armShift, 11, 2, 5);
+  ctx.fillStyle = `${primary}99`;
+  ctx.fillRect(9 + sway, 9, 6, 1);
 
-  if (!faceUp) {
-    ctx.fillStyle = '#0d152b';
-    if (faceLeft) {
-      ctx.fillRect(11, 10, 2, 2);
-    } else if (faceRight) {
-      ctx.fillRect(19, 10, 2, 2);
-    } else {
-      ctx.fillRect(12, 10, 2, 2);
-      ctx.fillRect(18, 10, 2, 2);
-    }
+  ctx.fillStyle = secondary;
+  ctx.fillRect(9, 5, 6, 5);
+  ctx.fillRect(10, 4, 4, 1);
+  ctx.fillStyle = '#f7efe5';
+  ctx.fillRect(11, 7, 2, 1);
+
+  if (faceUp) {
+    ctx.fillStyle = shadow;
+    ctx.fillRect(10, 5, 4, 2);
+  } else if (faceLeft) {
+    ctx.fillStyle = shadow;
+    ctx.fillRect(9, 6, 1, 3);
+  } else if (faceRight) {
+    ctx.fillStyle = shadow;
+    ctx.fillRect(14, 6, 1, 3);
   }
 
-  if (type === 'actions') {
-    if (row === 4) {
-      ctx.fillStyle = 'rgba(100, 213, 255, 0.45)';
-      ctx.fillRect(4 + frame, 6, 8, 3);
-      ctx.fillRect(20 - frame, 8, 6, 2);
-      ctx.fillRect(11, 35, 10, 2);
-    } else if (row === 5) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-      ctx.fillRect(8, 37, 16, 4);
-    } else if (row === 6) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-      ctx.beginPath();
-      ctx.arc(16, 6, 4 + (frame % 2), 0, Math.PI * 2);
-      ctx.fill();
-    }
+  if (type === 'actions' && row === 4) {
+    ctx.fillStyle = hexAlpha(primary, 0.45);
+    ctx.fillRect(7, 9, 10, 1);
+    ctx.fillRect(6 + frame, 18, 12 - frame, 1);
+  } else if (type === 'actions' && row === 5 && frame % 2 === 0) {
+    ctx.fillStyle = '#d7c6ff';
+    ctx.fillRect(16, 3, 2, 2);
+  } else if (type === 'actions' && row === 6) {
+    ctx.fillStyle = '#ffd782';
+    ctx.fillRect(17, 9, 2, 2);
   }
 
   ctx.restore();
+}
+
+function hexAlpha(hex: string, alpha: number) {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map((char) => char + char).join('')
+    : normalized;
+  const int = Number.parseInt(value, 16);
+  return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
 }
 
 function setElementBackground(element: HTMLElement | null, src: string | null) {

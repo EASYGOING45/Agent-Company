@@ -9,6 +9,68 @@ export interface RenderLayer {
   render(ctx: CanvasRenderingContext2D, delta: number): void;
 }
 
+export interface IsometricProjection {
+  originX: number;
+  originY: number;
+  tileWidth: number;
+  tileHeight: number;
+  elevation: number;
+  mapWidth: number;
+  mapHeight: number;
+}
+
+const DEFAULT_TILE_WIDTH = 48;
+const DEFAULT_TILE_HEIGHT = 24;
+const DEFAULT_ELEVATION = 34;
+
+let currentProjection: IsometricProjection = {
+  originX: 256,
+  originY: 74,
+  tileWidth: DEFAULT_TILE_WIDTH,
+  tileHeight: DEFAULT_TILE_HEIGHT,
+  elevation: DEFAULT_ELEVATION,
+  mapWidth: 16,
+  mapHeight: 12,
+};
+
+export function setCurrentProjection(projection: Partial<IsometricProjection>) {
+  currentProjection = { ...currentProjection, ...projection };
+}
+
+export function getCurrentProjection(): IsometricProjection {
+  return currentProjection;
+}
+
+export function buildProjection(
+  canvasWidth: number,
+  _canvasHeight: number,
+  mapWidth: number,
+  mapHeight: number,
+  tileWidth = DEFAULT_TILE_WIDTH,
+  tileHeight = DEFAULT_TILE_HEIGHT,
+  elevation = DEFAULT_ELEVATION
+): IsometricProjection {
+  const span = (mapWidth + mapHeight) * (tileWidth / 2);
+  return {
+    originX: Math.round((canvasWidth - span) / 2 + mapHeight * (tileWidth / 2)),
+    originY: 70,
+    tileWidth,
+    tileHeight,
+    elevation,
+    mapWidth,
+    mapHeight,
+  };
+}
+
+export function projectIso(tileX: number, tileY: number, lift = 0, projection = currentProjection) {
+  const halfW = projection.tileWidth / 2;
+  const halfH = projection.tileHeight / 2;
+  return {
+    x: projection.originX + (tileX - tileY) * halfW,
+    y: projection.originY + (tileX + tileY) * halfH - lift,
+  };
+}
+
 export class Renderer {
   readonly canvas: HTMLCanvasElement;
   readonly ctx: CanvasRenderingContext2D;
@@ -85,6 +147,7 @@ export class Renderer {
   private render(delta: number) {
     const { ctx, canvas } = this;
     this.crtPhase += delta;
+    setCurrentProjection(buildProjection(canvas.width, canvas.height, 16, 12));
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);

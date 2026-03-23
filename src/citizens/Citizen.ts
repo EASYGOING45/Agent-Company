@@ -1,11 +1,13 @@
 /**
  * 鸣潮元宇宙 - 共鸣者角色
+ * 等距小像素精灵替代高清头像
  */
 
-import type { SpriteSheet } from '../sprites/SpriteSheet.ts';
 import type { Animator } from '../sprites/Animator.ts';
-import type { Pathfinder } from '../scene/Pathfinder.ts';
 import type { RenderLayer } from '../canvas/Renderer.ts';
+import { getCurrentProjection, projectIso } from '../canvas/Renderer.ts';
+import type { Pathfinder } from '../scene/Pathfinder.ts';
+import type { SpriteSheet } from '../sprites/SpriteSheet.ts';
 
 export type AgentState =
   | 'working'
@@ -77,8 +79,6 @@ export class Citizen {
   private tileWidth: number;
   private tileHeight: number;
   private facing: 'up' | 'down' | 'left' | 'right' = 'down';
-  private avatarImage: HTMLImageElement | null = null;
-  private avatarLoaded = false;
 
   constructor(config: CitizenConfig, spriteSheet: SpriteSheet, tileWidth: number, tileHeight: number) {
     this.agentId = config.agentId;
@@ -92,7 +92,6 @@ export class Citizen {
     this.avatarPath = config.avatarPath ?? null;
     this.anchorLocation = config.position;
     this.room = inferRoomId(config.position);
-    this.loadAvatar();
     this.animator.play('idle_down');
   }
 
@@ -112,6 +111,21 @@ export class Citizen {
     return {
       x: Math.round(this.x / this.tileWidth),
       y: Math.round(this.y / this.tileHeight),
+    };
+  }
+
+  getProjectedPosition() {
+    const tileX = this.x / this.tileWidth;
+    const tileY = this.y / this.tileHeight;
+    return projectIso(tileX, tileY, 0, getCurrentProjection());
+  }
+
+  getScreenAnchor() {
+    const point = this.getProjectedPosition();
+    return {
+      x: point.x,
+      y: point.y - 22,
+      floorY: point.y + getCurrentProjection().tileHeight * 0.65,
     };
   }
 
@@ -171,17 +185,16 @@ export class Citizen {
 
   draw(ctx: CanvasRenderingContext2D) {
     if (!this.visible) return;
-
-    this.drawAura(ctx);
-    if (!this.drawAvatar(ctx)) {
-      this.animator.draw(ctx, this.x, this.y);
-    }
-    this.drawEnergyArc(ctx);
-    this.drawNameplate(ctx);
+    const anchor = this.getScreenAnchor();
+    this.drawAura(ctx, anchor.x, anchor.floorY);
+    this.drawSprite(ctx, anchor.x, anchor.y);
+    this.drawEnergyArc(ctx, anchor.x, anchor.y);
+    this.drawNameplate(ctx, anchor.x, anchor.y - 18);
   }
 
   containsPoint(px: number, py: number): boolean {
-    return px >= this.x - 6 && px <= this.x + this.tileWidth + 6 && py >= this.y - 24 && py <= this.y + this.tileHeight;
+    const anchor = this.getScreenAnchor();
+    return px >= anchor.x - 18 && px <= anchor.x + 18 && py >= anchor.y - 28 && py <= anchor.floorY + 4;
   }
 
   private updateMovement(delta: number, _pathfinder: Pathfinder, context: MovementContext) {
@@ -238,99 +251,66 @@ export class Citizen {
     this.animator.play(mapped);
   }
 
-  private loadAvatar() {
-    if (!this.avatarPath) return;
-
-    const image = new Image();
-    image.onload = () => {
-      this.avatarLoaded = true;
-      this.avatarImage = image;
-    };
-    image.onerror = () => {
-      this.avatarLoaded = false;
-      this.avatarImage = null;
-    };
-    image.decoding = 'async';
-    image.src = this.avatarPath;
-    void image.decode?.().catch(() => undefined);
-  }
-
-  private drawAura(ctx: CanvasRenderingContext2D) {
-    const centerX = this.x + this.tileWidth / 2;
-    const baseY = this.y + this.tileHeight - 2;
-    const pulse = 0.8 + Math.sin(performance.now() / 380 + this.x * 0.05) * 0.08;
-
+  private drawAura(ctx: CanvasRenderingContext2D, centerX: number, floorY: number) {
+    const pulse = 0.86 + Math.sin(performance.now() / 380 + this.x * 0.05) * 0.06;
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    const aura = ctx.createRadialGradient(centerX, baseY, 2, centerX, baseY, 16);
-    aura.addColorStop(0, hexToRgba(this.color, 0.34));
+    const aura = ctx.createRadialGradient(centerX, floorY, 2, centerX, floorY, 18);
+    aura.addColorStop(0, hexToRgba(this.color, 0.28));
     aura.addColorStop(1, hexToRgba(this.color, 0));
     ctx.fillStyle = aura;
     ctx.beginPath();
-    ctx.ellipse(centerX, baseY, 16 * pulse, 7 * pulse, 0, 0, Math.PI * 2);
+    ctx.ellipse(centerX, floorY, 16 * pulse, 7 * pulse, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  private drawAvatar(ctx: CanvasRenderingContext2D): boolean {
-    if (!this.avatarLoaded || !this.avatarImage) return false;
-
-    this.spriteSheet.drawAvatarFallback(ctx, this.avatarImage, this.x, this.y, {
-      size: 36,
-      borderColor: this.color,
-      backgroundColor: 'rgba(8, 12, 28, 0.94)',
-    });
-    return true;
+  private drawSprite(ctx: CanvasRenderingContext2D, centerX: number, baseY: number) {
+    ctx.save();
+    ctx.translate(centerX - 16, baseY - 24);
+    this.animator.draw(ctx, 0, 0);
+    ctx.restore();
   }
 
-  private drawEnergyArc(ctx: CanvasRenderingContext2D) {
-    const centerX = this.x + this.tileWidth / 2;
-    const centerY = this.y + 7;
+  private drawEnergyArc(ctx: CanvasRenderingContext2D, centerX: number, baseY: number) {
     const energy = Math.max(0.12, this.energy);
-
     ctx.save();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = hexToRgba(this.color, 0.75);
+    ctx.strokeStyle = hexToRgba(this.color, 0.7);
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 14, -Math.PI * 0.8, -Math.PI * 0.8 + Math.PI * 1.6 * energy);
+    ctx.arc(centerX, baseY - 18, 11, -Math.PI * 0.8, -Math.PI * 0.8 + Math.PI * 1.6 * energy);
     ctx.stroke();
     ctx.restore();
   }
 
-  private drawNameplate(ctx: CanvasRenderingContext2D) {
-    const centerX = this.x + this.tileWidth / 2 + 10;
-    const topY = this.y - 18;
+  private drawNameplate(ctx: CanvasRenderingContext2D, centerX: number, topY: number) {
     const statusLabel = STATE_LABEL[this.state];
-
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = '600 10px "Noto Sans SC", sans-serif';
     const nameWidth = ctx.measureText(this.name).width;
-    const plateWidth = Math.max(42, nameWidth + 18);
+    const plateWidth = Math.max(38, nameWidth + 16);
 
-    roundRect(ctx, centerX - plateWidth / 2, topY - 10, plateWidth, 16, 6);
-    ctx.fillStyle = 'rgba(5, 8, 20, 0.9)';
+    roundRect(ctx, centerX - plateWidth / 2, topY - 9, plateWidth, 14, 5);
+    ctx.fillStyle = 'rgba(18, 14, 22, 0.92)';
     ctx.fill();
-    ctx.strokeStyle = `${this.color}80`;
+    ctx.strokeStyle = `${this.color}66`;
     ctx.lineWidth = 1;
     ctx.stroke();
-
-    ctx.fillStyle = '#f7fbff';
+    ctx.fillStyle = '#fff7ef';
     ctx.fillText(this.name, centerX, topY + 1);
 
     ctx.font = '500 8px "Noto Sans SC", sans-serif';
-    const statusWidth = Math.max(32, ctx.measureText(statusLabel).width + 20);
-    const statusY = topY + 12;
-
-    roundRect(ctx, centerX - statusWidth / 2, statusY - 6, statusWidth, 12, 6);
-    ctx.fillStyle = 'rgba(8, 12, 28, 0.88)';
+    const statusWidth = Math.max(28, ctx.measureText(statusLabel).width + 18);
+    const statusY = topY + 11;
+    roundRect(ctx, centerX - statusWidth / 2, statusY - 5, statusWidth, 11, 5);
+    ctx.fillStyle = 'rgba(29, 22, 28, 0.88)';
     ctx.fill();
-    ctx.strokeStyle = hexToRgba(stateColor(this.state, this.color), 0.55);
+    ctx.strokeStyle = hexToRgba(stateColor(this.state, this.color), 0.5);
     ctx.stroke();
-
     ctx.fillStyle = stateColor(this.state, this.color);
     ctx.beginPath();
-    ctx.arc(centerX - statusWidth / 2 + 7, statusY, 2.5, 0, Math.PI * 2);
+    ctx.arc(centerX - statusWidth / 2 + 6, statusY + 0.5, 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillText(statusLabel, centerX + 3, statusY + 3);
     ctx.restore();
@@ -348,7 +328,11 @@ export class CitizenLayer implements RenderLayer {
   render(ctx: CanvasRenderingContext2D, _delta: number) {
     const sorted = this.citizens
       .filter((citizen) => citizen.visible)
-      .sort((a, b) => (a.y + 32) - (b.y + 32));
+      .sort((a, b) => {
+        const aAnchor = a.getScreenAnchor();
+        const bAnchor = b.getScreenAnchor();
+        return aAnchor.floorY - bAnchor.floorY;
+      });
 
     for (const citizen of sorted) {
       citizen.draw(ctx);
