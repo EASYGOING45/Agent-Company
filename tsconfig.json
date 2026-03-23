@@ -18,6 +18,6 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["src/**/*", "server/**/*"],
+  "include": ["src/**/*", "server/**/*", "workers/**/*"],
   "exclude": ["node_modules", "dist"]
 }

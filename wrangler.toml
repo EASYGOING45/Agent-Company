@@ -7,14 +7,14 @@ directory = "./dist"
 binding = "ASSETS"
 
 kv_namespaces = [
-  { binding = "AGENTS_KV", id = "e636e8cc7a5a452094d43217d0f69f3a" }
+  { binding = "AGENTS_KV", id = "e636e8cc7a5a452094d43217d0f69f3a", preview_id = "e636e8cc7a5a452094d43217d0f69f3a" }
 ]
 
 [durable_objects]
 bindings = [
-  { name = "AGENT_WORLD", class_name = "AgentWorldDurableObject" }
+  { name = "AGENT_STATE", class_name = "AgentStateDurableObject" }
 ]
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["AgentWorldDurableObject"]
+new_sqlite_classes = ["AgentStateDurableObject"]

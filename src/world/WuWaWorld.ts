@@ -17,6 +17,11 @@ export interface RegionDefinition {
   shortName: string;
   theme: RegionTheme;
   color: string;
+  palette: {
+    primary: string;
+    secondary: string;
+    glow: string;
+  };
   tagline: string;
   description: string;
   highlights: string[];
@@ -154,6 +159,11 @@ export function createWorldDefinition(): Record<RegionId, RegionDefinition> {
       shortName: '今州',
       theme: 'green',
       color: '#87f0c7',
+      palette: {
+        primary: '#87f0c7',
+        secondary: '#2a8572',
+        glow: 'rgba(135, 240, 199, 0.28)',
+      },
       tagline: '今州城风脉与乘霄山云海交汇的秩序中枢',
       description: '收纳今州城、虹镇、桃源乡与乘霄山的主大陆前线。',
       highlights: ['今州城', '虹镇', '桃源乡', '乘霄山'],
@@ -175,6 +185,11 @@ export function createWorldDefinition(): Record<RegionId, RegionDefinition> {
       shortName: '黑海岸',
       theme: 'purple',
       color: '#9f8cff',
+      palette: {
+        primary: '#9f8cff',
+        secondary: '#4657b8',
+        glow: 'rgba(159, 140, 255, 0.26)',
+      },
       tagline: '泰缇斯之底的潮汐机库与金库花房共鸣',
       description: '聚合泰缇斯之底、金库与花房的高保密行动枢纽。',
       highlights: ['泰缇斯之底', '金库', '花房'],
@@ -196,6 +211,11 @@ export function createWorldDefinition(): Record<RegionId, RegionDefinition> {
       shortName: '拉古那',
       theme: 'warm',
       color: '#f3c56b',
+      palette: {
+        primary: '#f3c56b',
+        secondary: '#c98a2e',
+        glow: 'rgba(243, 197, 107, 0.24)',
+      },
       tagline: '拉古那城邦与隐海修会之间的金色潮声',
       description: '覆盖拉古那城邦上层议事区与隐海修会学术穹顶。',
       highlights: ['拉古那城邦', '隐海修会'],
@@ -217,6 +237,11 @@ export function createWorldDefinition(): Record<RegionId, RegionDefinition> {
       shortName: '北落野',
       theme: 'blue',
       color: '#64d5ff',
+      palette: {
+        primary: '#64d5ff',
+        secondary: '#2d6fb3',
+        glow: 'rgba(100, 213, 255, 0.24)',
+      },
       tagline: '北落野风蚀台地与稷廷遗址裂谷遥相呼应',
       description: '以北落野营地为核心，外联稷廷遗址与边境观测节点。',
       highlights: ['北落野', '稷廷遗址'],
