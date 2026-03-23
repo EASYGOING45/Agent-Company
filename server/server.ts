@@ -5,7 +5,13 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { agentStore, type AgentState } from './store.ts';
+import { agentStore } from './store.ts';
+
+interface InboxMessage {
+  from: string;
+  action: { type: string; [key: string]: unknown };
+  timestamp: number;
+}
 
 // CORS 头
 const corsHeaders = {
@@ -30,6 +36,7 @@ export class WuWaServer {
   private wss: WebSocketServer;
   private port: number;
   private clients: Set<WebSocket> = new Set();
+  private inbox: Map<string, InboxMessage[]> = new Map();
 
   constructor(port = 4321) {
     this.port = port;
@@ -56,6 +63,13 @@ export class WuWaServer {
 
     // AgentStore 更新时广播
     agentStore.onUpdate(() => this.broadcast());
+    agentStore.onStateChange((change, agent) => {
+      this.broadcastMessage({
+        type: 'agent_state',
+        change,
+        agent: this.toPublicAgent(agent),
+      });
+    });
   }
 
   async start(): Promise<number> {
@@ -87,10 +101,14 @@ export class WuWaServer {
 
   // 广播状态给所有客户端
   private broadcast() {
-    const msg = JSON.stringify({
+    this.broadcastMessage({
       type: 'agents',
       agents: agentStore.getPublicList(),
     });
+  }
+
+  private broadcastMessage(payload: Record<string, unknown>) {
+    const msg = JSON.stringify(payload);
     for (const ws of this.clients) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(msg);
@@ -139,6 +157,7 @@ export class WuWaServer {
     if (req.method === 'GET' && url.pathname === '/api/agents') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
+        total: agentStore.getPublicList().length,
         agents: agentStore.getPublicList(),
       }));
       return;
@@ -157,13 +176,11 @@ export class WuWaServer {
         }
 
         const agent = agentStore.heartbeat(data);
+        const publicAgent = this.toPublicAgent(agent);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           ok: true,
-          agent: {
-            ...agent,
-            lastSeen: undefined,
-          },
+          agent: publicAgent,
           serverTime: Date.now(),
         }));
       } catch (err) {
@@ -186,14 +203,36 @@ export class WuWaServer {
         }
 
         // 处理动作
-        this.handleAction(data.agent, data.action);
+        const result = this.handleAction(data.agent, data.action);
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true }));
+        res.end(JSON.stringify({
+          ok: true,
+          delivered: result.delivered,
+          inboxed: result.inboxed,
+        }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: '无效的 JSON' }));
       }
+      return;
+    }
+
+    // GET /api/inbox - 返回消息收件箱
+    if (req.method === 'GET' && url.pathname === '/api/inbox') {
+      const agentId = url.searchParams.get('agent');
+      if (!agentId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: '缺少 agent 查询参数' }));
+        return;
+      }
+
+      const messages = this.drainInbox(agentId);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        agent: agentId,
+        messages,
+      }));
       return;
     }
 
@@ -205,6 +244,14 @@ export class WuWaServer {
   // 处理动作
   private handleAction(agentId: string, action: { type: string; [key: string]: unknown }) {
     const actionType = action.type;
+    let inboxed = 0;
+
+    this.broadcastMessage({
+      type: 'action',
+      agent: agentId,
+      action,
+      timestamp: Date.now(),
+    });
 
     if (actionType === 'speak' && typeof action.message === 'string') {
       // 说话 - 更新状态为 speaking
@@ -227,7 +274,50 @@ export class WuWaServer {
         task: action.task as string | null | undefined,
         energy: action.energy as number | undefined,
       });
+    } else if (actionType === 'message') {
+      inboxed = this.queueInbox(agentId, action);
     }
+
+    return {
+      delivered: true,
+      inboxed,
+    };
+  }
+
+  private queueInbox(from: string, action: { type: string; [key: string]: unknown }): number {
+    const recipients = this.extractRecipients(action);
+    const timestamp = Date.now();
+
+    for (const recipient of recipients) {
+      const queue = this.inbox.get(recipient) ?? [];
+      queue.push({ from, action, timestamp });
+      if (queue.length > 100) {
+        queue.shift();
+      }
+      this.inbox.set(recipient, queue);
+    }
+
+    return recipients.length;
+  }
+
+  private extractRecipients(action: { type: string; [key: string]: unknown }): string[] {
+    const raw = action.to ?? action.agent ?? action.targets;
+    if (typeof raw === 'string') return [raw];
+    if (Array.isArray(raw)) {
+      return raw.filter((value): value is string => typeof value === 'string');
+    }
+    return [];
+  }
+
+  private drainInbox(agentId: string): InboxMessage[] {
+    const messages = this.inbox.get(agentId) ?? [];
+    this.inbox.delete(agentId);
+    return messages;
+  }
+
+  private toPublicAgent(agent: ReturnType<typeof agentStore.heartbeat>) {
+    const { lastSeen, ...rest } = agent;
+    return rest;
   }
 }
 
@@ -239,49 +329,51 @@ function getFrontendHtml(port: number): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>鸣潮元宇宙 - 隐海修会基地</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+  <title>鸣潮元宇宙后端</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #0a0a1a;
-      color: #fff;
-      font-family: 'Noto Sans SC', sans-serif;
+      background: radial-gradient(circle at top, rgba(100, 213, 255, 0.15), transparent 32%), #050816;
+      color: #eaf3ff;
+      font-family: system-ui, sans-serif;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
+      padding: 24px;
     }
-    .loading {
-      text-align: center;
+    .panel {
+      max-width: 720px;
+      padding: 24px;
+      border-radius: 20px;
+      background: rgba(11, 18, 38, 0.92);
+      border: 1px solid rgba(100, 213, 255, 0.18);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
     }
-    .loading h1 {
-      font-family: 'VT323', monospace;
-      font-size: 3rem;
-      color: #00d4ff;
-      text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-      margin-bottom: 1rem;
+    h1 {
+      font-size: 2rem;
+      color: #64d5ff;
+      margin-bottom: 12px;
     }
-    .loading p {
-      color: #6ec4ff;
-      font-size: 1.1rem;
+    p, li {
+      line-height: 1.6;
+      color: rgba(234, 243, 255, 0.78);
     }
-    #canvas-container {
-      image-rendering: pixelated;
+    ul {
+      margin: 16px 0 0 18px;
     }
+    code { color: #f3c56b; }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="loading">
-      <h1>鸣潮元宇宙</h1>
-      <p>正在连接隐海修会基地... (${port})</p>
-    </div>
-  </div>
-  <script type="module" src="/src/main.ts"></script>
+  <main class="panel">
+    <h1>鸣潮元宇宙后端已启动</h1>
+    <p>当前端口: <code>${port}</code></p>
+    <ul>
+      <li>前端开发环境请使用 Vite: <code>http://localhost:5173</code></li>
+      <li>API: <code>GET /api/info</code>, <code>GET /api/agents</code>, <code>POST /api/heartbeat</code></li>
+      <li>WebSocket: <code>ws://localhost:${port}</code></li>
+    </ul>
+  </main>
 </body>
 </html>
   `;

@@ -21,6 +21,7 @@ server.start().then((actualPort) => {
 📡 API 端点:
    GET  /api/info      - 服务器信息
    GET  /api/agents    - 所有共鸣者
+   GET  /api/inbox     - Agent 收件箱
    POST /api/heartbeat - 心跳上报
    POST /api/act       - 执行动作
 

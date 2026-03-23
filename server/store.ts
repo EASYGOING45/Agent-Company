@@ -16,13 +16,24 @@ export interface AgentState {
   role?: string;           // 角色: owner/member/guest
 }
 
+export interface AgentStateChange {
+  agent: string;
+  previousState: string | null;
+  currentState: string;
+  timestamp: number;
+  reason: 'heartbeat' | 'timeout';
+}
+
 export class AgentStore {
   private agents: Map<string, AgentState> = new Map();
-  private offlineTimeout: number;
   private listeners: Set<(agents: AgentState[]) => void> = new Set();
+  private stateListeners: Set<(change: AgentStateChange, agent: AgentState) => void> = new Set();
   private sweepInterval: ReturnType<typeof setInterval> | null = null;
+  private sleepingTimeout: number;
+  private offlineTimeout: number;
 
-  constructor(offlineTimeout = 30000) { // 30秒超时
+  constructor(offlineTimeout = 30000) { // 30秒休眠，60秒离线
+    this.sleepingTimeout = offlineTimeout;
     this.offlineTimeout = offlineTimeout;
   }
 
@@ -53,21 +64,28 @@ export class AgentStore {
     role?: string;
   }): AgentState {
     const existing = this.agents.get(data.agent);
+    const previousState = existing?.state ?? null;
+    const isWakingUp = previousState === 'sleeping' || previousState === 'offline';
+    const nextState = data.state ?? (isWakingUp ? 'idle' : existing?.state ?? 'idle');
+    const now = Date.now();
 
     const agent: AgentState = {
       agent: data.agent,
       name: data.name ?? existing?.name ?? data.agent,
-      state: data.state ?? existing?.state ?? 'idle',
-      task: data.task !== undefined ? data.task : (existing?.task ?? null),
+      state: nextState,
+      task: data.task !== undefined ? data.task : (isWakingUp ? null : (existing?.task ?? null)),
       energy: data.energy ?? existing?.energy ?? 1,
       metadata: data.metadata ?? existing?.metadata ?? {},
-      lastSeen: Date.now(),
+      lastSeen: now,
       color: data.color ?? existing?.color,
       room: data.room ?? existing?.room ?? 'lobby',
       role: data.role ?? existing?.role ?? 'member',
     };
 
     this.agents.set(data.agent, agent);
+    if (previousState !== agent.state) {
+      this.notifyStateChange(previousState, agent, 'heartbeat', now);
+    }
     this.notify();
     return agent;
   }
@@ -104,6 +122,11 @@ export class AgentStore {
     return () => this.listeners.delete(listener);
   }
 
+  onStateChange(listener: (change: AgentStateChange, agent: AgentState) => void) {
+    this.stateListeners.add(listener);
+    return () => this.stateListeners.delete(listener);
+  }
+
   private notify() {
     const agents = this.getAll();
     for (const listener of this.listeners) {
@@ -120,24 +143,48 @@ export class AgentStore {
     const now = Date.now();
     let changed = false;
 
-    for (const [id, agent] of this.agents) {
+    for (const agent of this.agents.values()) {
       const elapsed = now - agent.lastSeen;
-      
+      const previousState = agent.state;
+
       // 30秒无心跳 → sleeping
-      if (agent.state !== 'offline' && agent.state !== 'sleeping' && elapsed > this.offlineTimeout) {
+      if (agent.state !== 'offline' && agent.state !== 'sleeping' && elapsed >= this.sleepingTimeout) {
         agent.state = 'sleeping';
         agent.task = '休眠中...';
         changed = true;
-      } 
+      }
       // 再30秒（共60秒）→ offline
-      else if (agent.state === 'sleeping' && elapsed > this.offlineTimeout * 2) {
+      else if (agent.state !== 'offline' && elapsed >= this.offlineTimeout * 2) {
         agent.state = 'offline';
         agent.task = null;
         changed = true;
       }
+
+      if (previousState !== agent.state) {
+        this.notifyStateChange(previousState, agent, 'timeout', now);
+      }
     }
 
     if (changed) this.notify();
+  }
+
+  private notifyStateChange(
+    previousState: string | null,
+    agent: AgentState,
+    reason: AgentStateChange['reason'],
+    timestamp: number,
+  ) {
+    const change: AgentStateChange = {
+      agent: agent.agent,
+      previousState,
+      currentState: agent.state,
+      timestamp,
+      reason,
+    };
+
+    for (const listener of this.stateListeners) {
+      listener(change, agent);
+    }
   }
 }
 
