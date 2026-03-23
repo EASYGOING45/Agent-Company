@@ -41,6 +41,16 @@ const STATE_ANIMATION_MAP: Record<AgentState, string> = {
   offline: 'idle_down',
 };
 
+const STATE_LABEL: Record<AgentState, string> = {
+  working: '工作中',
+  idle: '待命',
+  thinking: '思考',
+  sleeping: '休眠',
+  speaking: '交流',
+  error: '异常',
+  offline: '离线',
+};
+
 export class Citizen {
   readonly agentId: string;
   readonly name: string;
@@ -167,25 +177,7 @@ export class Citizen {
       this.animator.draw(ctx, this.x, this.y);
     }
     this.drawEnergyArc(ctx);
-
-    ctx.save();
-    ctx.font = '10px "Noto Sans SC", sans-serif';
-    ctx.textAlign = 'center';
-    const tagX = this.x + this.tileWidth / 2 + 10;
-    const tagY = this.y - 12;
-    const nameWidth = ctx.measureText(this.name).width;
-
-    ctx.fillStyle = 'rgba(8, 12, 28, 0.88)';
-    ctx.strokeStyle = `${this.color}88`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(tagX - nameWidth / 2 - 9, tagY - 12, nameWidth + 18, 18, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = this.color;
-    ctx.fillText(this.name, tagX, tagY);
-    ctx.restore();
+    this.drawNameplate(ctx);
   }
 
   containsPoint(px: number, py: number): boolean {
@@ -304,6 +296,45 @@ export class Citizen {
     ctx.stroke();
     ctx.restore();
   }
+
+  private drawNameplate(ctx: CanvasRenderingContext2D) {
+    const centerX = this.x + this.tileWidth / 2 + 10;
+    const topY = this.y - 18;
+    const statusLabel = STATE_LABEL[this.state];
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = '600 10px "Noto Sans SC", sans-serif';
+    const nameWidth = ctx.measureText(this.name).width;
+    const plateWidth = Math.max(42, nameWidth + 18);
+
+    roundRect(ctx, centerX - plateWidth / 2, topY - 10, plateWidth, 16, 6);
+    ctx.fillStyle = 'rgba(5, 8, 20, 0.9)';
+    ctx.fill();
+    ctx.strokeStyle = `${this.color}80`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f7fbff';
+    ctx.fillText(this.name, centerX, topY + 1);
+
+    ctx.font = '500 8px "Noto Sans SC", sans-serif';
+    const statusWidth = Math.max(32, ctx.measureText(statusLabel).width + 20);
+    const statusY = topY + 12;
+
+    roundRect(ctx, centerX - statusWidth / 2, statusY - 6, statusWidth, 12, 6);
+    ctx.fillStyle = 'rgba(8, 12, 28, 0.88)';
+    ctx.fill();
+    ctx.strokeStyle = hexToRgba(stateColor(this.state, this.color), 0.55);
+    ctx.stroke();
+
+    ctx.fillStyle = stateColor(this.state, this.color);
+    ctx.beginPath();
+    ctx.arc(centerX - statusWidth / 2 + 7, statusY, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(statusLabel, centerX + 3, statusY + 3);
+    ctx.restore();
+  }
 }
 
 export class CitizenLayer implements RenderLayer {
@@ -343,4 +374,28 @@ function hexToRgba(hex: string, alpha: number): string {
     : normalized;
   const int = Number.parseInt(value, 16);
   return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
+}
+
+function stateColor(state: AgentState, fallback: string): string {
+  switch (state) {
+    case 'working':
+      return '#8ce8b7';
+    case 'thinking':
+      return '#8ec8ff';
+    case 'speaking':
+      return '#ffd37c';
+    case 'sleeping':
+      return '#c7b0ff';
+    case 'error':
+      return '#ff8f8f';
+    case 'offline':
+      return '#7f8aa8';
+    default:
+      return fallback;
+  }
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
 }

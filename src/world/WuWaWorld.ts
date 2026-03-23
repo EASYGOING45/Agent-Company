@@ -348,29 +348,49 @@ function createHuanglongScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = y <= 3 ? 'floor_resonance' : x >= 10 ? 'floor_green' : 'floor';
+      floor[y][x] = y <= 2 ? 'floor_resonance' : x >= 10 ? 'floor_green' : x <= 4 ? 'floor_plank' : 'floor';
     }
   }
 
+  addWindows(decor, [
+    [2, 1],
+    [3, 1],
+    [12, 1],
+    [13, 1],
+  ]);
+  addDecorRow(decor, walkable, 1, 10, 3, ['bookshelf', 'bookshelf', 'plant']);
+
   for (const [x, y, asset] of [
-    [3, 3, 'console'],
-    [6, 3, 'desk'],
+    [2, 3, 'console'],
+    [3, 3, 'plant'],
+    [5, 3, 'desk'],
+    [6, 3, 'chair'],
+    [8, 3, 'bookshelf'],
     [10, 2, 'board'],
+    [11, 3, 'shelf'],
+    [12, 3, 'lamp'],
+    [4, 7, 'table'],
+    [5, 7, 'chair'],
+    [6, 7, 'chair'],
+    [11, 7, 'divider'],
     [12, 7, 'window'],
-    [4, 8, 'table'],
+    [13, 7, 'plant'],
+    [3, 9, 'couch'],
+    [4, 9, 'table'],
+    [10, 9, 'bench'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);
   }
 
   const locations = {
-    huanglong_city_console: { x: 3, y: 4, label: '今州中控台' },
+    huanglong_city_console: { x: 2, y: 4, label: '今州中控台' },
     huanglong_city_center: { x: 8, y: 5, label: '今州城主街' },
     huanglong_strategy_map: { x: 10, y: 3, label: '虹镇调度图' },
     huanglong_rainbow_town: { x: 12, y: 5, label: '虹镇驿桥' },
-    huanglong_peach_garden: { x: 4, y: 9, label: '桃源乡庭院' },
+    huanglong_peach_garden: { x: 2, y: 8, label: '桃源乡庭院' },
     huanglong_cloud_peak: { x: 12, y: 9, label: '乘霄山观景台' },
-    huanglong_city_walk_1: { x: 6, y: 7, label: '云桥 A' },
+    huanglong_city_walk_1: { x: 6, y: 6, label: '云桥 A' },
     huanglong_city_walk_2: { x: 9, y: 8, label: '云桥 B' },
   };
 
@@ -385,29 +405,42 @@ function createBlackShoresScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = x >= 5 && x <= 10 ? 'floor_ring' : 'floor_purple';
+      floor[y][x] = x >= 5 && x <= 10 ? 'floor_ring' : y >= 8 ? 'floor_plank_dark' : 'floor_purple';
     }
   }
 
+  addWindows(decor, [
+    [2, 1],
+    [13, 1],
+  ]);
+  addDecorRow(decor, walkable, 4, 2, 3, ['console', 'desk', 'chair']);
+  addDecorRow(decor, walkable, 10, 2, 3, ['archive', 'bookshelf', 'plant']);
+
   for (const [x, y, asset] of [
-    [3, 3, 'console'],
-    [8, 3, 'holo'],
+    [7, 3, 'holo'],
+    [8, 3, 'lamp'],
     [11, 4, 'board'],
+    [12, 4, 'divider'],
+    [3, 7, 'pod'],
     [4, 8, 'pod'],
+    [6, 8, 'couch'],
+    [7, 8, 'table'],
+    [10, 8, 'plant'],
     [12, 8, 'couch'],
+    [13, 8, 'plant'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);
   }
 
   const locations = {
-    blackshores_command_desk: { x: 3, y: 4, label: '黑海岸指挥席' },
+    blackshores_command_desk: { x: 4, y: 4, label: '黑海岸指挥席' },
     blackshores_tethys_core: { x: 8, y: 5, label: '泰缇斯之底' },
     blackshores_data_wall: { x: 11, y: 5, label: '潮汐数据墙' },
-    blackshores_vault: { x: 5, y: 9, label: '金库封存区' },
+    blackshores_vault: { x: 10, y: 3, label: '金库封存区' },
     blackshores_garden: { x: 12, y: 9, label: '花房露台' },
     blackshores_center: { x: 8, y: 7, label: '潮汐甲板' },
-    blackshores_walk_1: { x: 6, y: 3, label: '廊桥 A' },
+    blackshores_walk_1: { x: 6, y: 5, label: '廊桥 A' },
     blackshores_walk_2: { x: 10, y: 8, label: '廊桥 B' },
   };
 
@@ -422,16 +455,29 @@ function createRinascitaScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = y >= 7 ? 'floor_carpet' : 'floor_warm';
+      floor[y][x] = y >= 7 ? 'floor_carpet' : x >= 10 ? 'floor_tile_warm' : 'floor_warm';
     }
   }
 
+  addWindows(decor, [
+    [2, 1],
+    [3, 1],
+    [12, 1],
+    [13, 1],
+  ]);
+  addDecorRow(decor, walkable, 2, 3, 3, ['bookshelf', 'desk', 'chair']);
+  addDecorRow(decor, walkable, 10, 3, 3, ['board', 'archive', 'lamp']);
+
   for (const [x, y, asset] of [
-    [3, 3, 'desk'],
-    [7, 3, 'table'],
-    [11, 3, 'board'],
+    [6, 4, 'table'],
+    [7, 4, 'chair'],
+    [8, 4, 'chair'],
     [4, 8, 'bench'],
+    [5, 8, 'plant'],
+    [8, 8, 'table'],
+    [11, 8, 'window'],
     [12, 8, 'window'],
+    [13, 8, 'plant'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);
@@ -441,7 +487,7 @@ function createRinascitaScene(): SceneConfig {
     rinascita_scholar_hall: { x: 3, y: 4, label: '隐海修会书厅' },
     rinascita_laguna_forum: { x: 8, y: 5, label: '拉古那议事台' },
     rinascita_archive: { x: 11, y: 4, label: '潮汐档案库' },
-    rinascita_tide_observatory: { x: 12, y: 8, label: '观潮台' },
+    rinascita_tide_observatory: { x: 12, y: 7, label: '观潮台' },
     rinascita_cloister: { x: 4, y: 9, label: '回廊静室' },
     rinascita_center: { x: 8, y: 8, label: '城邦中庭' },
     rinascita_walk_1: { x: 6, y: 7, label: '拱廊 A' },
@@ -459,16 +505,24 @@ function createFrontierScene(): SceneConfig {
 
   for (let y = 1; y < 11; y += 1) {
     for (let x = 1; x < 15; x += 1) {
-      floor[y][x] = x <= 4 ? 'floor' : y <= 4 ? 'floor_grid' : 'floor_blue';
+      floor[y][x] = x <= 4 ? 'floor_plank_dark' : y <= 4 ? 'floor_grid' : x >= 10 ? 'floor_blue' : 'floor';
     }
   }
 
+  addWindows(decor, [
+    [12, 1],
+    [13, 1],
+  ]);
+  addDecorRow(decor, walkable, 2, 3, 3, ['console', 'desk', 'chair']);
+  addDecorRow(decor, walkable, 9, 3, 3, ['board', 'pillar', 'lamp']);
+
   for (const [x, y, asset] of [
-    [3, 3, 'console'],
-    [8, 3, 'board'],
-    [11, 4, 'pillar'],
     [5, 8, 'bar'],
+    [6, 8, 'chair'],
+    [8, 8, 'crate'],
+    [10, 8, 'table'],
     [12, 8, 'bench'],
+    [13, 8, 'plant'],
   ] as const) {
     decor[y][x] = asset;
     block(walkable, x, y);
@@ -486,4 +540,27 @@ function createFrontierScene(): SceneConfig {
   };
 
   return finalizeScene('solaris-frontier', 'blue', floor, decor, walkable, locations);
+}
+
+function addWindows(decor: string[][], cells: Array<readonly [number, number]>) {
+  for (const [x, y] of cells) {
+    decor[y][x] = 'window';
+  }
+}
+
+function addDecorRow(
+  decor: string[][],
+  walkable: boolean[][],
+  startX: number,
+  y: number,
+  count: number,
+  assets: string[]
+) {
+  for (let i = 0; i < count; i += 1) {
+    const asset = assets[i];
+    if (!asset) continue;
+    const x = startX + i;
+    decor[y][x] = asset;
+    block(walkable, x, y);
+  }
 }

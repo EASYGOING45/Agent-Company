@@ -296,6 +296,10 @@ class WuWaVerse {
     const region = WORLD[this.activeRegion];
     document.body.dataset.room = region.id;
     document.body.style.setProperty('--scene-image', region.scene.backdrop ? `url("${region.scene.backdrop}")` : 'none');
+    document.body.style.setProperty('--accent', region.palette.primary);
+    document.body.style.setProperty('--accent-soft', region.palette.glow);
+    document.body.style.setProperty('--accent-secondary', region.palette.secondary);
+    document.body.style.setProperty('--region-wash', `${region.palette.primary}18`);
     const roomName = document.getElementById('room-name');
     const stageName = document.getElementById('room-name-stage');
     const roomTagline = document.getElementById('room-tagline');
