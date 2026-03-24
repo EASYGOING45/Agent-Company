@@ -373,15 +373,25 @@
     }
     .citizen-art {
       width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 24px;
+      aspect-ratio: 2 / 3;  /* Card 立绘比例 */
+      border-radius: 16px;
       border: 1px solid rgba(255,255,255,0.08);
       background-size: cover;
-      background-position: center;
+      background-position: center top;  /* 从顶部居中显示 */
       background-color: rgba(8, 12, 28, 0.78);
       overflow: hidden;
       margin-bottom: 1rem;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      box-shadow: 
+        inset 0 0 0 1px rgba(255,255,255,0.03),
+        0 20px 40px rgba(0, 0, 0, 0.4);  /* 更强的阴影增加层次感 */
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .citizen-art:hover {
+      transform: translateY(-4px);
+      box-shadow: 
+        inset 0 0 0 1px rgba(255,255,255,0.05),
+        0 28px 56px rgba(0, 0, 0, 0.5),
+        0 0 30px var(--accent-soft);  /* 悬停时添加主题色光晕 */
     }
     .citizen-summary {
       display: flex;

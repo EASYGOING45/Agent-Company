@@ -36,6 +36,7 @@ export interface CitizenSeed {
   sprite: string;
   position: string;
   avatarPath: string;
+  cardPath?: string;  // Card 立绘路径
   color: string;
   role: string;
   faction: string;
@@ -67,6 +68,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '隐海修会',
     region: 'rinascita',
     avatarPath: '/assets/avatars/phoebe-avatar.png',
+    cardPath: '/assets/cards/phoebe.webp',
   },
   {
     agentId: 'jinxi',
@@ -78,6 +80,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '今州令尹府',
     region: 'huanglong',
     avatarPath: '/assets/avatars/jinxi.png',
+    cardPath: '/assets/cards/jinxi.webp',
   },
   {
     agentId: 'changli',
@@ -89,6 +92,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '今州令尹府',
     region: 'huanglong',
     avatarPath: '/assets/avatars/changli.png',
+    cardPath: '/assets/cards/changli.webp',
   },
   {
     agentId: 'jiyan',
@@ -100,6 +104,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '夜归军',
     region: 'huanglong',
     avatarPath: '/assets/avatars/jiyan.png',
+    cardPath: '/assets/cards/jiyan.webp',
   },
   {
     agentId: 'xiangliyao',
@@ -111,6 +116,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '稷廷遗址考察队',
     region: 'frontier',
     avatarPath: '/assets/portraits/xiangliyao.webp',
+    cardPath: '/assets/cards/xiangliyao.webp',
   },
   {
     agentId: 'colletta',
@@ -122,6 +128,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '黑海岸',
     region: 'blackshores',
     avatarPath: '/assets/avatars/colletta.png',
+    cardPath: '/assets/cards/colletta.webp',
   },
   {
     agentId: 'roccia',
@@ -133,6 +140,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '斐撒烈家族',
     region: 'blackshores',
     avatarPath: '/assets/avatars/roccia.png',
+    cardPath: '/assets/cards/roccia.webp',
   },
   {
     agentId: 'zani',
@@ -144,6 +152,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '斐撒烈家族',
     region: 'rinascita',
     avatarPath: '/assets/avatars/zani.png',
+    cardPath: '/assets/cards/zani.webp',
   },
   {
     agentId: 'brant',
@@ -155,6 +164,7 @@ export const INITIAL_CITIZENS: CitizenSeed[] = [
     faction: '黑海岸',
     region: 'blackshores',
     avatarPath: '/assets/portraits/brant.webp',
+    cardPath: '/assets/cards/brant.webp',
   },
 ];
 

@@ -24,6 +24,7 @@ export interface CitizenConfig {
   sprite: string;
   position: string;
   avatarPath?: string;
+  cardPath?: string;  // Card 立绘路径
   npc?: boolean;
   color?: string;
   role?: string;
@@ -61,6 +62,7 @@ export class Citizen {
   readonly color: string;
   readonly role: string;
   readonly avatarPath: string | null;
+  readonly cardPath: string | null;  // Card 立绘路径
 
   x = 0;
   y = 0;
@@ -94,6 +96,7 @@ export class Citizen {
     this.color = config.color ?? '#64d5ff';
     this.role = config.role ?? 'member';
     this.avatarPath = config.avatarPath ?? null;
+    this.cardPath = config.cardPath ?? null;
     this.anchorLocation = config.position;
     this.room = inferRoomId(config.position);
     this.animator.play('idle_down');

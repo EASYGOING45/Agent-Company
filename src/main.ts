@@ -599,6 +599,7 @@ class WuWaVerse {
       task: snapshot?.task ?? citizen.task ?? '待命中',
       energy: `${Math.round((snapshot?.energy ?? citizen.energy) * 100)}%`,
       avatarPath: citizen.avatarPath,
+      cardPath: citizen.cardPath,  // 传递 Card 立绘路径
       activity: describeActivity(citizen.state),
     };
   }

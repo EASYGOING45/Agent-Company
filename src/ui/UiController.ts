@@ -10,6 +10,7 @@ export interface CharacterDetail {
   task: string;
   energy: string;
   avatarPath: string | null;
+  cardPath: string | null;  // Card 立绘路径
   activity: string;
 }
 
@@ -171,7 +172,9 @@ export class UiController {
     this.citizenEnergy.textContent = detail.energy;
     this.citizenRoom.textContent = detail.room;
     this.citizenActivity.textContent = detail.activity;
-    setElementBackground(this.citizenArt, detail.avatarPath);
+    // 优先使用 Card 立绘，如果没有则使用 avatar
+    const artPath = detail.cardPath || detail.avatarPath;
+    setElementBackground(this.citizenArt, artPath);
     setElementBackground(this.citizenAvatar, detail.avatarPath);
   }
 
