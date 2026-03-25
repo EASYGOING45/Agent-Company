@@ -43,6 +43,78 @@ function createPixelAvatar({ background, panel, hair, skin, eye, jacket, accent,
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+/**
+ * @typedef {'online' | 'idle' | 'busy' | 'offline'} MemberStatus
+ */
+
+export const MEMBER_STATUS = Object.freeze({
+  ONLINE: 'online',
+  IDLE: 'idle',
+  BUSY: 'busy',
+  OFFLINE: 'offline',
+});
+
+/** @type {Readonly<Record<MemberStatus, string>>} */
+export const MEMBER_STATUS_LABELS = Object.freeze({
+  online: '在线',
+  idle: '摸鱼中',
+  busy: '工作中',
+  offline: '离线',
+});
+
+export const MEMBER_STATUS_STORAGE_KEY = 'agent-company-member-status';
+
+/**
+ * @param {unknown} value
+ * @returns {value is MemberStatus}
+ */
+export function isMemberStatus(value) {
+  return typeof value === 'string' && Object.values(MEMBER_STATUS).includes(/** @type {MemberStatus} */ (value));
+}
+
+/**
+ * @returns {Partial<Record<string, MemberStatus>>}
+ */
+export function loadMemberStatusMap() {
+  if (typeof localStorage === 'undefined') {
+    return {};
+  }
+
+  try {
+    const raw = localStorage.getItem(MEMBER_STATUS_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(([, value]) => isMemberStatus(value))
+    );
+  } catch (error) {
+    console.warn('Unable to read member statuses from storage.', error);
+    return {};
+  }
+}
+
+/**
+ * @param {Partial<Record<string, MemberStatus>>} statusMap
+ */
+export function saveMemberStatusMap(statusMap) {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(MEMBER_STATUS_STORAGE_KEY, JSON.stringify(statusMap));
+  } catch (error) {
+    console.warn('Unable to persist member statuses.', error);
+  }
+}
+
 const phoebeAvatar = '/public/assets/avatars/phoebe-avatar.png';
 const phoebeAvatarFallback = createPixelAvatar({
   background: '#f6dbe9',
@@ -142,7 +214,7 @@ export const members = [
     workspace: '元宇宙 2.1 打磨',
     status: '工作中',
     presence: 'busy',
-    presenceLabel: 'busy',
+    presenceLabel: MEMBER_STATUS_LABELS.busy,
     duration: '42 分钟',
     accent: 'owner',
     note: '正在给整间事务所补光、排班、做最后验收，把前台脉冲调到刚刚好的亮度。',
@@ -167,7 +239,7 @@ export const members = [
     workspace: '多房间交互逻辑',
     status: '编码中',
     presence: 'online',
-    presenceLabel: 'online',
+    presenceLabel: MEMBER_STATUS_LABELS.online,
     duration: '18 分钟',
     accent: 'member',
     note: '在会议桌旁同步切换节奏和状态衔接，确保每次跃迁都像真正跨进另一间房。',
@@ -192,7 +264,7 @@ export const members = [
     workspace: '像素装饰调研',
     status: '调研中',
     presence: 'idle',
-    presenceLabel: 'idle',
+    presenceLabel: MEMBER_STATUS_LABELS.idle,
     duration: '33 分钟',
     accent: 'member',
     note: '在暖灯下归档参考，准备把修会纹样、棱镜与光噪颗粒再往页面里压一层。',
@@ -217,7 +289,7 @@ export const members = [
     workspace: '动效与反馈',
     status: '高频施工',
     presence: 'busy',
-    presenceLabel: 'busy',
+    presenceLabel: MEMBER_STATUS_LABELS.busy,
     duration: '9 分钟',
     accent: 'idle',
     note: '已经把实验舞台和反馈脚手架搭好，正往机台上堆最后几层霓虹与噪点。',
@@ -242,7 +314,7 @@ export const members = [
     workspace: '入口观察位',
     status: '在线',
     presence: 'offline',
-    presenceLabel: 'offline',
+    presenceLabel: MEMBER_STATUS_LABELS.offline,
     duration: '12 分钟',
     accent: 'guest',
     note: '正在主厅浏览事务所动线，像是刚从前台登记进来的外部观察员。',

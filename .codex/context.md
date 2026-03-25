@@ -1,99 +1,98 @@
-# Agent-Company Feature Development & Polish Task
+# Agent-Company 开发任务 - CodeX 上下文
 
-## Current State
-- Isometric pixel art rendering ✓
-- 9 characters with colors and positions ✓
-- 4 regions (huanglong, blackshores, rinascita, frontier) ✓
-- Basic room layouts with furniture ✓
-- Particle effects and speech bubbles ✓
-- Cloudflare Workers + Pages deployment ✓
+## 当前项目状态
+- 等距像素渲染系统 ✓
+- 9个鸣潮角色（菲比、长离、今汐等）✓
+- 4个区域（今州、黑海岸、拉古那、前线）✓
+- 基础房间布局与家具 ✓
+- 粒子效果和对话气泡 ✓
+- Cloudflare Workers + Pages 部署 ✓
 
-## Next Phase: Feature Development
+## 本次 CodeX 会话目标
 
-### 1. Character Interactions
-- [ ] Click on character to view details panel
-- [ ] Character selection/highlighting
-- [ ] Character information popup (name, role, faction, status)
-- [ ] Direct message simulation between characters
-- [ ] Character movement paths visualization
+### 优先级1：成员状态管理系统 ⭐ 当前任务
 
-### 2. Room/World Navigation
-- [ ] Smooth camera pan/zoom
-- [ ] Room transition animations
-- [ ] Region selector with thumbnails
-- [ ] Minimap or overview mode
-- [ ] Click on door/exit to change room
+实现完整的成员状态管理功能：
 
-### 3. Activity System
-- [ ] Characters perform activities based on state
-  - working: sit at desk, type animation
-  - idle: wander, look around
-  - thinking: thought bubble, pause
-  - speaking: speech bubble, face target
-- [ ] Activity zones (work areas, rest areas, meeting spots)
-- [ ] Dynamic state changes with visual feedback
+1. **四种状态定义**
+   - online（在线）- 绿色
+   - idle（摸鱼中）- 黄色
+   - busy（工作中）- 红色
+   - offline（离线）- 灰色
 
-### 4. Communication Features
-- [ ] Chat panel showing character messages
-- [ ] Speech bubbles with text
-- [ ] Group conversations in shared spaces
-- [ ] Message history/log
+2. **状态文案映射**
+   - online → "在线"
+   - idle → "摸鱼中"
+   - busy → "工作中"
+   - offline → "离线"
 
-### 5. UI/UX Improvements
-- [ ] Loading screen with progress
-- [ ] Settings panel (sound, graphics)
-- [ ] About/help panel
-- [ ] Responsive design for different screen sizes
-- [ ] Dark/light theme toggle
+3. **功能实现**
+   - 每个成员卡片显示状态指示灯（像素风格圆形）
+   - 状态文案 hover 显示或直接在卡片上展示
+   - 点击自己的卡片可弹出状态选择器
+   - 状态持久化到 localStorage
 
-### 6. Visual Polish
-- [ ] Character idle animations
-- [ ] Walking animations between points
-- [ ] Door open/close animations
-- [ ] Furniture interaction highlights
-- [ ] Ambient particle effects (dust, light rays)
-- [ ] Day/night cycle or lighting variations
+4. **涉及文件**
+   - `src/data.js` - 添加状态枚举、文案映射、localStorage 方法
+   - `src/styles.css` - 状态灯样式、状态切换动画
+   - `src/main.ts` 或 `src/main.js` - 状态切换逻辑、点击事件
+   - `index.html` - 成员卡状态 UI 元素
 
-### 7. Sound (Optional)
-- [ ] Background music per region
-- [ ] Footstep sounds
-- [ ] Interaction sounds
-- [ ] Ambient sounds
+### 优先级2：角色交互系统（后续任务）
 
-### 8. Data & Backend
-- [ ] WebSocket connection status indicator
-- [ ] Real-time character state sync
-- [ ] Character activity logging
-- [ ] Save/load world state
+- 点击角色查看详情面板
+- 角色选择/高亮
+- 角色信息弹窗（名字、角色、阵营、状态）
+- 角色活动动画（工作、摸鱼、思考）
 
-## Priority Order (High to Low)
-1. Character details panel (click to view info)
-2. Activity animations (work, idle, think)
-3. Smooth room transitions
-4. Chat/communication panel
-5. Camera controls (pan/zoom)
-6. UI polish (loading, settings)
-7. Sound effects
+## 技术规范
 
-## Technical Notes
-- Use existing isometric rendering system
-- Leverage existing particle system for effects
-- Maintain TypeScript type safety
-- Keep performance smooth (60fps target)
-- Mobile-friendly interactions
+### 代码规范
+- 保持 TypeScript 类型安全
+- 使用现有等距渲染系统
+- 保持像素风格一致性
+- 性能目标 60fps
 
-## Deliverables
-1. Interactive character system (click, info, activities)
-2. Enhanced navigation (transitions, camera)
-3. Communication features (chat, speech bubbles)
-4. UI components (panels, settings)
-5. Visual polish (animations, effects)
-6. Build, test, deploy
-7. Commit: "feat: add character interactions and activity system"
+### 状态灯设计
+- 像素化圆形指示灯
+- 四种颜色对应四种状态
+- 添加微妙的发光/呼吸动画
+- 位置：成员卡片角落
 
-## Success Criteria
-- Characters feel alive with activities
-- UI is intuitive and responsive
-- Navigation is smooth
-- Visuals are polished and appealing
-- Performance remains good
+### localStorage 键名
+- `agent-company-member-status` - 存储所有成员状态
+
+## 文件结构参考
+```
+Agent-Company/
+├── index.html          # 主页面，包含成员卡 UI
+├── src/
+│   ├── data.js         # 成员数据、状态定义
+│   ├── main.ts         # 主逻辑、状态切换
+│   ├── styles.css      # 状态灯样式
+│   └── canvas/         # 等距渲染相关
+└── public/assets/      # 角色头像等资源
+```
+
+## 验收标准
+- [ ] 四种状态可正常切换
+- [ ] 状态指示灯在成员卡上正确显示
+- [ ] 状态文案可见
+- [ ] 点击自己卡片可编辑状态
+- [ ] 刷新页面后状态保持
+- [ ] 样式保持像素风一致性
+- [ ] 代码通过 TypeScript 编译
+- [ ] 部署后功能正常
+
+## 当前 Git 状态
+- 分支: main
+- 远程: https://github.com/EASYGOING45/Agent-Company.git
+- 上次提交: 437b26a (已推送)
+
+## 部署地址
+- https://7abb4622.agent-company.pages.dev
+
+## 备注
+- 保持与现有视觉风格一致（暗色主题 + 金色强调色）
+- 状态切换需要平滑动画
+- 仅当前用户可以编辑自己的状态（通过 localStorage 识别）

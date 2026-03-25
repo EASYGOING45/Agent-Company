@@ -48,6 +48,30 @@ const SPRITE_CONFIGS = Object.fromEntries(
 ) as Record<string, SpriteSheetConfig>;
 
 type CitizenAgentSnapshot = AgentStatus & { agent: string };
+type MemberStatus = 'online' | 'idle' | 'busy' | 'offline';
+type MemberStatusMap = Partial<Record<string, MemberStatus>>;
+
+interface MemberStatusCard {
+  id: string;
+  name: string;
+  role: string;
+  faction: string;
+  task: string;
+  status: MemberStatus;
+  room: RegionId;
+  isSelf: boolean;
+  isSelected: boolean;
+}
+
+const MEMBER_STATUS_STORAGE_KEY = 'agent-company-member-status';
+const EDITABLE_MEMBER_ID = 'phoebe';
+const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
+  online: '在线',
+  idle: '摸鱼中',
+  busy: '工作中',
+  offline: '离线',
+};
+const MEMBER_STATUS_ORDER: MemberStatus[] = ['online', 'idle', 'busy', 'offline'];
 
 interface ExitDefinition {
   region: RegionId;
@@ -103,6 +127,8 @@ class WuWaVerse {
   private selectedCitizen: Citizen | null = null;
   private exitHotspots: ExitHotspot[] = [];
   private settings: SettingsState = this.ui.getSettings();
+  private memberStatuses: MemberStatusMap = loadMemberStatuses();
+  private openStatusPickerId: string | null = null;
   private switchingRegion = false;
 
   constructor(private container: HTMLElement, config: { wsUrl: string; agentsUrl: string; heartbeatUrl: string }) {
@@ -133,6 +159,13 @@ class WuWaVerse {
 
     this.renderer.canvas.addEventListener('click', (event) => this.handleClick(event));
     this.renderer.canvas.addEventListener('mousemove', (event) => this.handleHover(event));
+    document.addEventListener('click', (event) => this.handleMemberBoardClick(event));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.openStatusPickerId) {
+        this.openStatusPickerId = null;
+        this.refreshAgentUi();
+      }
+    });
     this.signal.onUpdate((agents) => this.handleSignalUpdate(agents as CitizenAgentSnapshot[]));
     this.signal.onEvent((event) => this.handleSignalEvent(event));
     this.signal.onConnectionStateChange((state) => this.ui.setConnectionState(state));
@@ -391,6 +424,7 @@ class WuWaVerse {
   private async switchRegion(region: RegionId) {
     if (region === this.activeRegion || this.switchingRegion) return;
     this.switchingRegion = true;
+    this.openStatusPickerId = null;
     this.ui.setLoading(true, `切换至 ${WORLD[region].name}`, '镜头与场景正在重构路线…');
     await this.renderer.playTransition(WORLD[region].name, async () => {
       this.activeRegion = region;
@@ -463,22 +497,115 @@ class WuWaVerse {
 
   private refreshAgentUi() {
     const onlineCount = document.getElementById('online-count');
-    const activeAgents = [...this.agents.values()].filter((agent) => normalizeState(agent.state) !== 'offline');
+    const activeAgents = this.citizens.filter((citizen) => this.getMemberStatus(citizen.agentId, citizen.state) !== 'offline');
     if (onlineCount) onlineCount.textContent = String(activeAgents.length);
+
+    const board = document.getElementById('member-status-board');
+    if (board) {
+      const cards = this.citizens
+        .filter((citizen) => citizen.room === this.activeRegion)
+        .map((citizen) => this.buildMemberStatusCard(citizen));
+
+      board.innerHTML = cards.length > 0
+        ? cards.map((card) => this.renderMemberStatusCard(card)).join('')
+        : '<div class="member-status-empty">当前地区暂无可展示成员。</div>';
+    }
 
     const info = document.getElementById('agents-info');
     if (info) {
-      const list = this.citizens
+      const cards = this.citizens
         .filter((citizen) => citizen.room === this.activeRegion)
-        .map((citizen) => {
-          const agent = this.agents.get(citizen.agentId);
-          const task = agent?.task ?? citizen.task ?? '待命中';
-          const faction = agent?.faction ?? '自由共鸣者';
-          return `${citizen.name} · ${faction} · ${labelState(citizen.state)} · ${task}`;
-        });
-      info.textContent = list.length > 0 ? list.join('\n') : '当前地区暂无活跃共鸣者。';
+        .map((citizen) => this.buildMemberStatusCard(citizen));
+      const online = cards.filter((card) => card.status === 'online').length;
+      const idle = cards.filter((card) => card.status === 'idle').length;
+      const busy = cards.filter((card) => card.status === 'busy').length;
+      const offline = cards.filter((card) => card.status === 'offline').length;
+      info.textContent = cards.length > 0
+        ? `在线 ${online} · 摸鱼 ${idle} · 工作 ${busy} · 离线 ${offline}`
+        : '当前地区暂无活跃共鸣者。';
     }
     this.ui.setChatHistory(this.chatHistory);
+  }
+
+  private buildMemberStatusCard(citizen: Citizen): MemberStatusCard {
+    const agent = this.agents.get(citizen.agentId);
+    return {
+      id: citizen.agentId,
+      name: citizen.name,
+      role: labelRole(agent?.role ?? citizen.role),
+      faction: agent?.faction ?? '自由共鸣者',
+      task: agent?.task ?? citizen.task ?? describeActivity(citizen.state),
+      status: this.getMemberStatus(citizen.agentId, citizen.state),
+      room: normalizeRegion(citizen.room),
+      isSelf: citizen.agentId === EDITABLE_MEMBER_ID,
+      isSelected: this.selectedCitizen?.agentId === citizen.agentId,
+    };
+  }
+
+  private renderMemberStatusCard(card: MemberStatusCard): string {
+    const statusLabel = MEMBER_STATUS_LABELS[card.status];
+    const optionMarkup = card.isSelf && this.openStatusPickerId === card.id
+      ? `
+        <div class="member-status-options" role="listbox" aria-label="${escapeHtml(card.name)} 状态选择器">
+          ${MEMBER_STATUS_ORDER.map((status) => `
+            <button
+              class="member-status-option ${status === card.status ? 'is-active' : ''}"
+              type="button"
+              data-status-option="true"
+              data-agent-id="${card.id}"
+              data-status-value="${status}"
+            >
+              <span class="member-status-indicator" data-status-tone="${status}">
+                <span class="member-status-lamp"></span>
+                ${MEMBER_STATUS_LABELS[status]}
+              </span>
+              <span>${status === card.status ? '当前' : '切换'}</span>
+            </button>
+          `).join('')}
+        </div>
+      `
+      : '';
+
+    return `
+      <article
+        class="member-status-card ${card.isSelf ? 'is-self' : ''} ${card.isSelected ? 'is-selected' : ''}"
+        data-member-card-id="${card.id}"
+        tabindex="0"
+        role="button"
+        aria-label="${escapeHtml(card.name)} 当前状态 ${statusLabel}"
+      >
+        <div class="member-status-head">
+          <div class="member-status-copy">
+            <strong>${escapeHtml(card.name)}</strong>
+            <span>${escapeHtml(card.faction)}</span>
+          </div>
+          <span class="member-status-tag">${card.isSelf ? 'ME' : escapeHtml(card.role)}</span>
+        </div>
+        <div class="member-status-meta">
+          <span class="member-status-indicator" data-status-tone="${card.status}">
+            <span class="member-status-lamp"></span>
+            ${statusLabel}
+          </span>
+          <span>${escapeHtml(WORLD[card.room].shortName)}</span>
+        </div>
+        <p class="member-status-summary">${escapeHtml(card.task)}</p>
+        ${optionMarkup}
+      </article>
+    `;
+  }
+
+  private getMemberStatus(agentId: string, fallbackState: AgentState): MemberStatus {
+    return this.memberStatuses[agentId] ?? deriveMemberStatus(fallbackState);
+  }
+
+  private updateMemberStatus(agentId: string, status: MemberStatus) {
+    this.memberStatuses = {
+      ...this.memberStatuses,
+      [agentId]: status,
+    };
+    persistMemberStatuses(this.memberStatuses);
+    this.openStatusPickerId = null;
+    this.refreshAgentUi();
   }
 
   private refreshSelectedCitizen() {
@@ -491,6 +618,48 @@ class WuWaVerse {
       WORLD[this.activeRegion].scene.backdrop ?? null
     );
     this.syncCharacterPopup();
+  }
+
+  private handleMemberBoardClick(event: MouseEvent) {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const option = target.closest<HTMLButtonElement>('[data-status-option="true"]');
+    if (option) {
+      event.preventDefault();
+      const agentId = option.dataset.agentId;
+      const status = option.dataset.statusValue;
+      if (agentId === EDITABLE_MEMBER_ID && isMemberStatus(status)) {
+        this.updateMemberStatus(agentId, status);
+      }
+      return;
+    }
+
+    const card = target.closest<HTMLElement>('[data-member-card-id]');
+    if (card) {
+      const agentId = card.dataset.memberCardId;
+      if (!agentId) return;
+
+      const citizen = this.citizens.find((entry) => entry.agentId === agentId) ?? null;
+      if (citizen) {
+        for (const entry of this.citizens) entry.setSelected(false);
+        citizen.setSelected(citizen.room === this.activeRegion);
+        this.selectedCitizen = citizen;
+        this.refreshSelectedCitizen();
+        this.applyCameraFocus(citizen.room === this.activeRegion);
+      }
+
+      this.openStatusPickerId = agentId === EDITABLE_MEMBER_ID
+        ? this.openStatusPickerId === agentId ? null : agentId
+        : null;
+      this.refreshAgentUi();
+      return;
+    }
+
+    if (this.openStatusPickerId && !target.closest('[data-member-status-board]')) {
+      this.openStatusPickerId = null;
+      this.refreshAgentUi();
+    }
   }
 
   private updateSpeakingTargets(citizens: Citizen[]) {
@@ -589,12 +758,13 @@ class WuWaVerse {
 
   private buildCharacterDetail(citizen: Citizen, snapshot?: CitizenAgentSnapshot): CharacterDetail {
     const region = normalizeRegion(snapshot?.region ?? citizen.room);
+    const memberStatus = this.getMemberStatus(citizen.agentId, citizen.state);
     return {
       id: citizen.agentId,
       name: citizen.name,
       role: labelRole(snapshot?.role ?? citizen.role),
       faction: snapshot?.faction ?? '自由共鸣者',
-      status: labelState(citizen.state),
+      status: `${MEMBER_STATUS_LABELS[memberStatus]} · ${labelState(citizen.state)}`,
       room: WORLD[region].name,
       task: snapshot?.task ?? citizen.task ?? '待命中',
       energy: `${Math.round((snapshot?.energy ?? citizen.energy) * 100)}%`,
@@ -730,6 +900,60 @@ function normalizeState(value: string | undefined): AgentState {
     default:
       return 'idle';
   }
+}
+
+function isMemberStatus(value: unknown): value is MemberStatus {
+  return value === 'online' || value === 'idle' || value === 'busy' || value === 'offline';
+}
+
+function deriveMemberStatus(state: AgentState): MemberStatus {
+  switch (state) {
+    case 'working':
+    case 'error':
+      return 'busy';
+    case 'thinking':
+      return 'idle';
+    case 'sleeping':
+    case 'offline':
+      return 'offline';
+    case 'speaking':
+    case 'idle':
+    default:
+      return 'online';
+  }
+}
+
+function loadMemberStatuses(): MemberStatusMap {
+  try {
+    const raw = localStorage.getItem(MEMBER_STATUS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(([, value]) => isMemberStatus(value))
+    ) as MemberStatusMap;
+  } catch (error) {
+    console.warn('Unable to read member status state.', error);
+    return {};
+  }
+}
+
+function persistMemberStatuses(statuses: MemberStatusMap) {
+  try {
+    localStorage.setItem(MEMBER_STATUS_STORAGE_KEY, JSON.stringify(statuses));
+  } catch (error) {
+    console.warn('Unable to persist member status state.', error);
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function normalizeRegion(value: string | undefined): RegionId {
