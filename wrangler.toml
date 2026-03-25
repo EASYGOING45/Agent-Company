@@ -1,6 +1,7 @@
 name = "agent-company"
 compatibility_date = "2025-01-01"
 main = "workers/worker.ts"
+pages_build_output_dir = "./dist"
 
 [assets]
 directory = "./dist"

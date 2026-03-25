@@ -30,7 +30,7 @@ interface SpriteProfile {
 }
 
 const SPRITE_PROFILES: Record<string, SpriteProfile> = {
-  phoebe: { body: '#f3c56b', hair: '#fff1c8', shadow: '#35220e', accent: '#ffe28d', trim: '#7c5316', silhouette: 'halo' },
+  phoebe: { body: '#d6b07f', hair: '#fff1c8', shadow: '#35220e', accent: '#f2cb96', trim: '#7c5316', silhouette: 'halo' },
   jinxi: { body: '#7fe4d6', hair: '#ecfffb', shadow: '#10342c', accent: '#b9fff6', trim: '#2d6f63', silhouette: 'longHair' },
   changli: { body: '#ff9f72', hair: '#ffe7d6', shadow: '#4a1f11', accent: '#ffd08f', trim: '#973d23', silhouette: 'cloak' },
   jiyan: { body: '#87f0c7', hair: '#edfff7', shadow: '#143126', accent: '#b5ffd7', trim: '#2f7459', silhouette: 'armor' },

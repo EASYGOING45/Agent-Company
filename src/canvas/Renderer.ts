@@ -229,7 +229,7 @@ export class Renderer {
     ctx.fillRect(0, 0, width, height);
 
     const frameGlow = ctx.createLinearGradient(0, 0, width, height);
-    frameGlow.addColorStop(0, 'rgba(243, 197, 107, 0.16)');
+    frameGlow.addColorStop(0, 'rgba(214, 176, 127, 0.16)');
     frameGlow.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
     frameGlow.addColorStop(1, 'rgba(100, 213, 255, 0.16)');
     ctx.strokeStyle = frameGlow;
@@ -248,7 +248,7 @@ export class Renderer {
     ctx.fillStyle = overlay;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = `rgba(243, 197, 107, ${(0.65 * eased).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(214, 176, 127, ${(0.65 * eased).toFixed(3)})`;
     ctx.lineWidth = 2;
     ctx.strokeRect(8, 8, width - 16, height - 16);
 
@@ -259,7 +259,7 @@ export class Renderer {
       ctx.fillText(`正在前往 ${this.transitionLabel}`, width / 2, height / 2 - 4);
       ctx.font = '500 10px "Noto Sans SC", sans-serif';
       ctx.fillStyle = `rgba(216, 210, 226, ${(0.78 * eased).toFixed(3)})`;
-      ctx.fillText('Room transition engaged', width / 2, height / 2 + 16);
+      ctx.fillText('场景切换中', width / 2, height / 2 + 16);
     }
     ctx.restore();
   }

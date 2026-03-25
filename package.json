@@ -1,7 +1,7 @@
 {
   "name": "agent-company-wuwa",
-  "version": "2.0.0",
-  "description": "鸣潮世界观的 Agent 元宇宙 - 基于 Miniverse 架构",
+  "version": "3.0.0",
+  "description": "鸣潮主题动态像素世界 Agent-Company v3 - 基于 Miniverse 架构",
   "type": "module",
   "scripts": {
     "dev": "vite",

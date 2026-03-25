@@ -41,7 +41,7 @@ interface RenderCommand {
 const THEME_TINT: Record<NonNullable<SceneConfig['theme']>, string> = {
   blue: '#64d5ff',
   green: '#87f0c7',
-  warm: '#f3c56b',
+  warm: '#d6b07f',
   purple: '#b59bff',
 };
 
