@@ -3,13 +3,13 @@ compatibility_date = "2025-01-01"
 main = "workers/worker.ts"
 pages_build_output_dir = "./dist"
 
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-
 kv_namespaces = [
   { binding = "AGENTS_KV", id = "e636e8cc7a5a452094d43217d0f69f3a", preview_id = "e636e8cc7a5a452094d43217d0f69f3a" }
 ]
+
+[assets]
+directory = "./dist"
+binding = "STATIC_ASSETS"
 
 [durable_objects]
 bindings = [

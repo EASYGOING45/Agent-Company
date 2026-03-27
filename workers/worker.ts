@@ -2,7 +2,7 @@ import { AgentStateDurableObject } from './durable-object.ts';
 
 interface Env {
   AGENT_STATE: DurableObjectNamespace;
-  ASSETS?: Fetcher;
+  STATIC_ASSETS?: Fetcher;
 }
 
 interface Fetcher {
@@ -61,8 +61,8 @@ export default {
       });
     }
 
-    if (env.ASSETS) {
-      return env.ASSETS.fetch(request);
+    if (env.STATIC_ASSETS) {
+      return env.STATIC_ASSETS.fetch(request);
     }
 
     return json({ error: 'Not found' }, 404);
