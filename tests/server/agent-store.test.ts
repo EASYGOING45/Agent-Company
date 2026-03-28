@@ -14,15 +14,24 @@ test('heartbeat creates an idle agent by default with room lobby', () => {
 
 test('stale agents transition to sleeping then offline', () => {
   const store = new AgentStore();
-  const agent = store.heartbeat({ agent: 'phoebe' });
+  const originalNow = Date.now;
+  let now = 0;
 
-  agent.lastSeen = 0;
+  Date.now = () => now;
 
-  assert.equal(store.sweepOnce(30_000), true);
-  assert.equal(store.get('phoebe')?.state, 'sleeping');
-  assert.equal(store.get('phoebe')?.task, '休眠中...');
+  try {
+    store.heartbeat({ agent: 'phoebe' });
 
-  assert.equal(store.sweepOnce(60_000), true);
-  assert.equal(store.get('phoebe')?.state, 'offline');
-  assert.equal(store.get('phoebe')?.task, null);
+    now = 30_000;
+    assert.equal(store.sweepOnce(), true);
+    assert.equal(store.get('phoebe')?.state, 'sleeping');
+    assert.equal(store.get('phoebe')?.task, '休眠中...');
+
+    now = 60_000;
+    assert.equal(store.sweepOnce(), true);
+    assert.equal(store.get('phoebe')?.state, 'offline');
+    assert.equal(store.get('phoebe')?.task, null);
+  } finally {
+    Date.now = originalNow;
+  }
 });

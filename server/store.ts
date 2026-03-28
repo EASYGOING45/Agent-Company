@@ -146,16 +146,16 @@ export class AgentStore {
       const elapsed = now - agent.lastSeen;
       const previousState = agent.state;
 
-      // 60秒无心跳 → offline
-      if (agent.state !== 'offline' && elapsed >= this.offlineTimeout * 2) {
-        agent.state = 'offline';
-        agent.task = null;
-        changed = true;
-      }
       // 30秒无心跳 → sleeping
-      else if (agent.state !== 'offline' && agent.state !== 'sleeping' && elapsed >= this.sleepingTimeout) {
+      if (agent.state !== 'offline' && agent.state !== 'sleeping' && elapsed >= this.sleepingTimeout) {
         agent.state = 'sleeping';
         agent.task = '休眠中...';
+        changed = true;
+      }
+      // 再30秒（共60秒）→ offline
+      else if (agent.state !== 'offline' && elapsed >= this.offlineTimeout * 2) {
+        agent.state = 'offline';
+        agent.task = null;
         changed = true;
       }
 
