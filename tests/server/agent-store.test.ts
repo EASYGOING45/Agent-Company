@@ -12,7 +12,7 @@ test('heartbeat creates an idle agent by default with room lobby', () => {
   assert.equal(agent.task, null);
 });
 
-test('stale agents transition to sleeping then offline', () => {
+test('stale agents sleep on a first 60s sweep before going offline later', () => {
   const store = new AgentStore();
   const originalNow = Date.now;
   let now = 0;
@@ -22,12 +22,12 @@ test('stale agents transition to sleeping then offline', () => {
   try {
     store.heartbeat({ agent: 'phoebe' });
 
-    now = 30_000;
+    now = 60_000;
     assert.equal(store.sweepOnce(), true);
     assert.equal(store.get('phoebe')?.state, 'sleeping');
     assert.equal(store.get('phoebe')?.task, '休眠中...');
 
-    now = 60_000;
+    now = 90_000;
     assert.equal(store.sweepOnce(), true);
     assert.equal(store.get('phoebe')?.state, 'offline');
     assert.equal(store.get('phoebe')?.task, null);
