@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "node --test --experimental-strip-types tests/**/*.test.ts",
     "server": "node --experimental-strip-types server/index.ts",
     "server:dev": "node --watch --experimental-strip-types server/index.ts",
     "preview": "vite preview"

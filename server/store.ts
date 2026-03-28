@@ -139,24 +139,23 @@ export class AgentStore {
    * 30秒无心跳 → sleeping
    * 60秒无心跳 → offline
    */
-  private sweep() {
-    const now = Date.now();
+  sweepOnce(now = Date.now()) {
     let changed = false;
 
     for (const agent of this.agents.values()) {
       const elapsed = now - agent.lastSeen;
       const previousState = agent.state;
 
-      // 30秒无心跳 → sleeping
-      if (agent.state !== 'offline' && agent.state !== 'sleeping' && elapsed >= this.sleepingTimeout) {
-        agent.state = 'sleeping';
-        agent.task = '休眠中...';
-        changed = true;
-      }
-      // 再30秒（共60秒）→ offline
-      else if (agent.state !== 'offline' && elapsed >= this.offlineTimeout * 2) {
+      // 60秒无心跳 → offline
+      if (agent.state !== 'offline' && elapsed >= this.offlineTimeout * 2) {
         agent.state = 'offline';
         agent.task = null;
+        changed = true;
+      }
+      // 30秒无心跳 → sleeping
+      else if (agent.state !== 'offline' && agent.state !== 'sleeping' && elapsed >= this.sleepingTimeout) {
+        agent.state = 'sleeping';
+        agent.task = '休眠中...';
         changed = true;
       }
 
@@ -166,6 +165,11 @@ export class AgentStore {
     }
 
     if (changed) this.notify();
+    return changed;
+  }
+
+  private sweep() {
+    return this.sweepOnce();
   }
 
   private notifyStateChange(
