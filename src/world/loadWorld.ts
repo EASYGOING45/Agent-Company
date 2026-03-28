@@ -1,27 +1,25 @@
-import { readFile } from 'node:fs/promises';
-import { dirname, posix, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import type { SceneConfig } from '../scene/Scene.ts';
 import type { LoadedWorld, WorldDefinition, WorldIndex } from './types.ts';
-
-const WORLD_INDEX_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '../../public/worlds/index.json');
-const WORLD_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../public/worlds');
 
 function isAbsoluteAssetPath(src: string) {
   return /^(\/|blob:|data:|https?:\/\/)/.test(src);
 }
 
-async function readJsonFile<T>(path: string): Promise<T> {
-  const raw = await readFile(path, 'utf8');
-  return JSON.parse(raw) as T;
+async function fetchJson<T>(path: string): Promise<T> {
+  const response = await fetch(path);
+
+  if (!response.ok) {
+    throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json() as Promise<T>;
 }
 
 export function resolveWorldAssetPath(basePath: string, src: string) {
   if (!src) return src;
   if (isAbsoluteAssetPath(src)) return src;
 
-  return posix.join(basePath.replace(/\/+$/, ''), src);
+  return `${basePath.replace(/\/+$/, '')}/${src.replace(/^\.?\//, '')}`;
 }
 
 export function buildSceneConfig(basePath: string, world: WorldDefinition): SceneConfig {
@@ -43,18 +41,15 @@ export function buildSceneConfig(basePath: string, world: WorldDefinition): Scen
 }
 
 export async function loadWorld(worldId = 'agent-company'): Promise<LoadedWorld> {
-  const index = await readJsonFile<WorldIndex>(WORLD_INDEX_PATH);
+  const index = await fetchJson<WorldIndex>('/worlds/index.json');
   const entry = index.worlds.find((candidate) => candidate.id === worldId);
 
   if (!entry) {
     throw new Error(`Unknown world id: ${worldId}`);
   }
 
-  const worldPath = entry.path.startsWith('/worlds/')
-    ? entry.path.slice('/worlds/'.length)
-    : entry.path.replace(/^\/+/, '');
-  const world = await readJsonFile<WorldDefinition>(resolve(WORLD_ROOT, worldPath));
-  const basePath = `/${entry.path.replace(/\/[^/]+$/, '')}`;
+  const world = await fetchJson<WorldDefinition>(entry.path);
+  const basePath = entry.path.replace(/\/[^/]+$/, '');
 
   return {
     world,
