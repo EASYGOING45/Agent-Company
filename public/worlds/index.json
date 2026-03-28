@@ -1,0 +1,9 @@
+{
+  "worlds": [
+    {
+      "id": "agent-company",
+      "name": "Agent Company",
+      "path": "/worlds/agent-company/world.json"
+    }
+  ]
+}

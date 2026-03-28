@@ -1,0 +1,77 @@
+{
+  "id": "agent-company",
+  "name": "Agent Company",
+  "scene": {
+    "name": "agent-company",
+    "tileWidth": 32,
+    "tileHeight": 32,
+    "tiles": {
+      "floor": "/assets/tiles/floor.png",
+      "wall": "/assets/tiles/wall.png"
+    },
+    "floor": [
+      ["wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+      ["wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall"]
+    ]
+  },
+  "citizens": [
+    {
+      "id": "phoebe",
+      "name": "菲比",
+      "sprite": "phoebe",
+      "x": 3,
+      "y": 3,
+      "avatarPath": "/assets/avatars/phoebe-avatar.png",
+      "cardPath": "/assets/cards/phoebe.webp",
+      "color": "#d6b07f",
+      "role": "owner",
+      "faction": "隐海修会"
+    },
+    {
+      "id": "jinxi",
+      "name": "今汐",
+      "sprite": "jinxi",
+      "x": 12,
+      "y": 3,
+      "avatarPath": "/assets/avatars/jinxi.png",
+      "cardPath": "/assets/cards/jinxi.webp",
+      "color": "#7fe4d6",
+      "role": "sentinel",
+      "faction": "今州令尹府"
+    },
+    {
+      "id": "changli",
+      "name": "长离",
+      "sprite": "changli",
+      "x": 4,
+      "y": 8,
+      "avatarPath": "/assets/avatars/changli.png",
+      "cardPath": "/assets/cards/changli.webp",
+      "color": "#ff9f72",
+      "role": "strategist",
+      "faction": "今州令尹府"
+    },
+    {
+      "id": "jiyan",
+      "name": "忌炎",
+      "sprite": "jiyan",
+      "x": 11,
+      "y": 8,
+      "avatarPath": "/assets/avatars/jiyan.png",
+      "cardPath": "/assets/cards/jiyan.webp",
+      "color": "#87f0c7",
+      "role": "marshal",
+      "faction": "夜归军"
+    }
+  ]
+}
