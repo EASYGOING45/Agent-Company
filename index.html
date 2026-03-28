@@ -28,12 +28,12 @@
       color: var(--text);
       font-family: "Noto Sans SC", sans-serif;
       background:
-        radial-gradient(circle at top, rgba(239, 196, 145, 0.14), transparent 28%),
-        linear-gradient(180deg, rgba(18, 12, 16, 0.68), rgba(18, 12, 16, 0.96)),
+        radial-gradient(circle at top, color-mix(in srgb, var(--accent) 18%, transparent), transparent 28%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-1) 72%, transparent), color-mix(in srgb, var(--bg-0) 92%, black 8%)),
         var(--scene-image) center/cover fixed no-repeat,
         radial-gradient(circle at top, var(--region-wash), transparent 32%),
-        radial-gradient(circle at 80% 20%, rgba(243, 197, 107, 0.12), transparent 24%),
-        linear-gradient(180deg, #130d12 0%, #1d151b 42%, #140e15 100%);
+        radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent-gold) 14%, transparent), transparent 24%),
+        linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 42%, var(--bg-2) 100%);
       overflow-x: hidden;
     }
     body::before {
@@ -52,6 +52,58 @@
     body[data-room="blackshores"] { --region-wash: rgba(159, 140, 255, 0.10); }
     body[data-room="rinascita"] { --region-wash: rgba(214, 176, 127, 0.14); }
     body[data-room="frontier"] { --region-wash: rgba(100, 213, 255, 0.10); }
+    body[data-theme="resonance"] {
+      --bg-0: #171117;
+      --bg-1: #221a22;
+      --bg-2: #2f2530;
+      --line: rgba(236, 214, 188, 0.16);
+      --text: #fff5eb;
+      --muted: rgba(255, 245, 235, 0.66);
+      --accent: #d6b07f;
+      --accent-soft: rgba(214, 176, 127, 0.24);
+      --accent-secondary: #8e6f50;
+      --accent-gold: #f2cb96;
+      --region-wash: rgba(214, 176, 127, 0.08);
+    }
+    body[data-theme="nightfall"] {
+      --bg-0: #0c1224;
+      --bg-1: #131a33;
+      --bg-2: #1b2550;
+      --line: rgba(173, 193, 255, 0.2);
+      --text: #edf2ff;
+      --muted: rgba(214, 224, 255, 0.7);
+      --accent: #7b9fff;
+      --accent-soft: rgba(123, 159, 255, 0.22);
+      --accent-secondary: #5366c9;
+      --accent-gold: #bfd0ff;
+      --region-wash: rgba(123, 159, 255, 0.12);
+    }
+    body[data-theme="twilight"] {
+      --bg-0: #1a1420;
+      --bg-1: #281a2c;
+      --bg-2: #3b2742;
+      --line: rgba(255, 217, 234, 0.18);
+      --text: #fff4fb;
+      --muted: rgba(255, 227, 239, 0.72);
+      --accent: #ff9ec8;
+      --accent-soft: rgba(255, 158, 200, 0.22);
+      --accent-secondary: #c67bb2;
+      --accent-gold: #ffd7ec;
+      --region-wash: rgba(255, 158, 200, 0.12);
+    }
+    body[data-theme="prism"] {
+      --bg-0: #151321;
+      --bg-1: #231b34;
+      --bg-2: #37274d;
+      --line: rgba(238, 219, 255, 0.2);
+      --text: #fff8ff;
+      --muted: rgba(244, 228, 255, 0.74);
+      --accent: #ff6b9d;
+      --accent-soft: rgba(255, 107, 157, 0.24);
+      --accent-secondary: #7f86ff;
+      --accent-gold: #ffd36f;
+      --region-wash: rgba(255, 107, 157, 0.14);
+    }
     header, main, footer { position: relative; z-index: 1; }
     header {
       display: flex;
@@ -85,7 +137,7 @@
       border: 1px solid var(--line);
       border-radius: 10px;
       background:
-        linear-gradient(180deg, rgba(54, 40, 43, 0.94), rgba(34, 24, 28, 0.92)),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 94%, white 6%), color-mix(in srgb, var(--bg-1) 96%, black 4%)),
         linear-gradient(90deg, rgba(255,255,255,0.04), transparent);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 14px 30px rgba(0,0,0,0.22);
     }
@@ -116,7 +168,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       background:
-        linear-gradient(180deg, rgba(46, 34, 38, 0.92), rgba(28, 20, 24, 0.9)),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 92%, white 8%), color-mix(in srgb, var(--bg-1) 94%, black 6%)),
         radial-gradient(circle at top right, var(--region-wash), transparent 42%);
       box-shadow: 0 18px 50px rgba(10, 6, 8, 0.34);
     }
@@ -157,7 +209,7 @@
     }
     .room-btn, .control-btn {
       border: 1px solid var(--line);
-      background: rgba(43, 31, 35, 0.9);
+      background: color-mix(in srgb, var(--bg-1) 88%, black 12%);
       color: var(--text);
       border-radius: 999px;
       padding: 0.7rem 1rem;
@@ -181,7 +233,7 @@
       border: 1px solid rgba(255,255,255,0.08);
       background:
         linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
-        rgba(14, 11, 18, 0.74);
+        color-mix(in srgb, var(--bg-0) 74%, black 26%);
     }
     .stage-banner strong {
       color: var(--accent-gold);
@@ -229,7 +281,7 @@
       padding: 0.75rem;
       border-radius: 12px;
       background:
-        linear-gradient(180deg, rgba(35, 26, 30, 0.92), rgba(22, 16, 18, 0.95)),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 90%, black 10%), color-mix(in srgb, var(--bg-1) 96%, black 4%)),
         radial-gradient(circle at top, var(--accent-soft), transparent 45%),
         linear-gradient(135deg, rgba(255,255,255,0.03), transparent 42%);
       overflow: hidden;
@@ -341,7 +393,7 @@
       padding: 0.45rem 0.7rem;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(8, 12, 28, 0.68);
+      background: color-mix(in srgb, var(--bg-0) 68%, black 32%);
       color: var(--muted);
       font-size: 0.8rem;
     }
@@ -662,7 +714,7 @@
       padding: 1rem;
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: linear-gradient(180deg, rgba(34, 24, 28, 0.96), rgba(18, 13, 18, 0.94));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 96%, white 4%), color-mix(in srgb, var(--bg-0) 94%, black 6%));
       box-shadow: 0 18px 42px rgba(0,0,0,0.32);
       transform: translateY(calc(100% + 1.25rem));
       transition: transform 220ms ease;
@@ -702,6 +754,42 @@
       margin-top: 0.85rem;
       flex-wrap: wrap;
     }
+    .theme-selector {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: all 160ms ease;
+    }
+    .theme-option:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .theme-option.is-active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .theme-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--theme-color);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--theme-color) 54%, transparent);
+    }
     footer {
       padding: 0 2rem 1.4rem;
       color: rgba(234, 243, 255, 0.38);
@@ -722,7 +810,7 @@
     }
   </style>
 </head>
-<body data-room="rinascita">
+<body data-room="rinascita" data-theme="resonance">
   <header>
     <div class="brand">
       <h1>鸣潮元宇宙</h1>
@@ -894,10 +982,55 @@
       </div>
       <input type="range" id="setting-zoom" min="0.9" max="1.15" step="0.01" value="1">
     </label>
+    <div class="settings-row">
+      <div class="settings-inline">
+        <span>视觉主题</span>
+        <strong id="theme-label">金色共鸣</strong>
+      </div>
+      <div class="theme-selector" id="theme-selector"></div>
+    </div>
   </section>
 
   <script type="module">
-    import './src/main.ts';
+    import { applyTheme, getThemes } from './src/main.ts';
+
+    const themeSelector = document.getElementById('theme-selector');
+    const themeLabel = document.getElementById('theme-label');
+
+    function renderThemeSelector() {
+      if (!themeSelector) return;
+
+      const activeTheme = document.body.dataset.theme || 'resonance';
+      const themes = getThemes();
+      themeSelector.innerHTML = themes.map((theme) => `
+        <button
+          type="button"
+          class="theme-option ${theme.id === activeTheme ? 'is-active' : ''}"
+          data-theme-id="${theme.id}"
+          style="--theme-color: ${theme.accent}"
+          aria-pressed="${theme.id === activeTheme ? 'true' : 'false'}"
+        >
+          <span>${theme.emoji}</span>
+          <span class="theme-dot"></span>
+          <span>${theme.name}</span>
+        </button>
+      `).join('');
+
+      if (themeLabel) {
+        const currentTheme = themes.find((theme) => theme.id === activeTheme);
+        themeLabel.textContent = currentTheme ? currentTheme.name : activeTheme;
+      }
+    }
+
+    themeSelector?.addEventListener('click', (event) => {
+      const button = event.target instanceof HTMLElement
+        ? event.target.closest('[data-theme-id]')
+        : null;
+      if (!(button instanceof HTMLButtonElement)) return;
+
+      applyTheme(button.dataset.themeId || 'resonance');
+      renderThemeSelector();
+    });
 
     function updateTime() {
       const now = new Date();
@@ -905,6 +1038,7 @@
         now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
+    renderThemeSelector();
     updateTime();
     setInterval(updateTime, 1000);
   </script>

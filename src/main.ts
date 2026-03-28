@@ -10,6 +10,7 @@ import { ParticleSystem } from './effects/Particles.ts';
 import { SpeechBubbleSystem } from './effects/SpeechBubble.ts';
 import { Signal, type AgentStatus } from './signal/Signal.ts';
 import { UiController, type CharacterDetail, type ChatEntry, type SettingsState } from './ui/UiController.ts';
+import { THEMES, loadTheme, saveTheme } from './data.js';
 import {
   INITIAL_CITIZENS,
   REGION_ORDER,
@@ -20,6 +21,7 @@ import {
 import type { SpriteSheetConfig } from './sprites/types.ts';
 
 const WORLD = createWorldDefinition();
+type ThemeId = (typeof THEMES)[number]['id'];
 interface SpriteProfile {
   body: string;
   hair: string;
@@ -65,6 +67,7 @@ interface MemberStatusCard {
 
 const MEMBER_STATUS_STORAGE_KEY = 'agent-company-member-status';
 const EDITABLE_MEMBER_ID = 'phoebe';
+const DEFAULT_THEME_ID: ThemeId = 'resonance';
 const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
   online: '在线',
   idle: '摸鱼中',
@@ -72,6 +75,23 @@ const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
   offline: '离线',
 };
 const MEMBER_STATUS_ORDER: MemberStatus[] = ['online', 'idle', 'busy', 'offline'];
+
+function resolveTheme(themeId: string | null | undefined): ThemeId {
+  return THEMES.some((theme) => theme.id === themeId) ? (themeId as ThemeId) : DEFAULT_THEME_ID;
+}
+
+export function getThemes() {
+  return THEMES;
+}
+
+export function applyTheme(themeId: string) {
+  const nextTheme = resolveTheme(themeId);
+  document.body.dataset.theme = nextTheme;
+  saveTheme(nextTheme);
+  return nextTheme;
+}
+
+applyTheme(loadTheme());
 
 interface ExitDefinition {
   region: RegionId;
@@ -471,10 +491,6 @@ class WuWaVerse {
     const region = WORLD[this.activeRegion];
     document.body.dataset.room = region.id;
     document.body.style.setProperty('--scene-image', region.scene.backdrop ? `url("${region.scene.backdrop}")` : 'none');
-    document.body.style.setProperty('--accent', region.palette.primary);
-    document.body.style.setProperty('--accent-soft', region.palette.glow);
-    document.body.style.setProperty('--accent-secondary', region.palette.secondary);
-    document.body.style.setProperty('--region-wash', `${region.palette.primary}18`);
     const roomName = document.getElementById('room-name');
     const stageName = document.getElementById('room-name-stage');
     const roomTagline = document.getElementById('room-tagline');

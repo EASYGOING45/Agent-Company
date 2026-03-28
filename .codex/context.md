@@ -1,4 +1,11 @@
-# Agent-Company v3.0 - Miniverse 重构任务
+# Agent-Company v3.0 - 当前任务：多主题切换系统
+
+## 任务状态
+**当前进行中**: TASK_多主题支持
+**Session**: agent:codex:acp:7463e8a3-3e95-4746-896b-981d396d0ffc
+
+## 项目路径
+/Users/golden-tenet/claw-spaces/Phoebe/Projects/Agent-Company-v3
 
 ## 任务目标
 基于 miniverse 架构，全面重构 Agent-Company 为鸣潮主题的动态像素世界。

@@ -65,6 +65,45 @@ export const MEMBER_STATUS_LABELS = Object.freeze({
 export const MEMBER_STATUS_STORAGE_KEY = 'agent-company-member-status';
 
 /**
+ * @typedef {'resonance' | 'nightfall' | 'twilight' | 'prism'} ThemeId
+ */
+
+/** @type {ReadonlyArray<{ id: ThemeId; name: string; emoji: string; accent: string }>} */
+export const THEMES = Object.freeze([
+  { id: 'resonance', name: '金色共鸣', emoji: '✨', accent: '#d6b07f' },
+  { id: 'nightfall', name: '极夜', emoji: '🌙', accent: '#7b9fff' },
+  { id: 'twilight', name: '薄暮', emoji: '🌸', accent: '#ff9ec8' },
+  { id: 'prism', name: '棱镜', emoji: '🌈', accent: '#ff6b9d' },
+]);
+
+export const THEME_STORAGE_KEY = 'agent-company-theme';
+
+/**
+ * @param {unknown} value
+ * @returns {value is ThemeId}
+ */
+export function isThemeId(value) {
+  return THEMES.some((theme) => theme.id === value);
+}
+
+/**
+ * @returns {ThemeId}
+ */
+export function loadTheme() {
+  if (typeof localStorage === 'undefined') return 'resonance';
+  const value = localStorage.getItem(THEME_STORAGE_KEY);
+  return isThemeId(value) ? value : 'resonance';
+}
+
+/**
+ * @param {ThemeId} themeId
+ */
+export function saveTheme(themeId) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(THEME_STORAGE_KEY, themeId);
+}
+
+/**
  * @param {unknown} value
  * @returns {value is MemberStatus}
  */
